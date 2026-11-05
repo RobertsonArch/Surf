@@ -58,6 +58,7 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 .src{font-size:.8rem;color:var(--muted);margin:0}.src a{color:inherit}
 .foot{font-size:.8rem;color:var(--muted);max-width:80ch;margin:0}
+.fc-tabs{display:flex;gap:6px;flex-wrap:wrap}.fc-tabs button{font:inherit;font-size:.8rem;padding:5px 12px;border-radius:999px;border:1px solid var(--grid);background:var(--panel);color:var(--muted);cursor:pointer}.fc-tabs button[aria-pressed=true]{color:var(--fg);border-color:var(--fg)}
 </style>
 </head>
 <body>
@@ -95,6 +96,30 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
       <span><i style="background:var(--goodbg)"></i>Works: tide 0–6 ft, light, no east wind 10 km/h+</span>
       <span><i style="background:var(--off)"></i>Ruled out (reason in red)</span>
       <span>Current (for reference, not in the odds): F flood running in, E ebb running out, S slack, in knots</span>
+    </div>
+  </section>
+
+  <section class="panel" id="travel" aria-live="polite">
+    <div>
+      <p class="eyebrow" style="margin:0">Arrival time</p>
+      <h2 style="margin:2px 0 0;font-size:1.2rem">When will it reach Angeles Point?</h2>
+      <p class="sub" style="margin-top:4px">Enter a reading from the outside buoy and when it was taken. Swell travels at a speed set by its period, so longer-period swell arrives sooner.</p>
+    </div>
+    <div class="fc-tabs" id="tb-buoy" role="group" aria-label="Buoy">
+      <button type="button" data-b="neah" aria-pressed="true">Neah Bay</button>
+      <button type="button" data-b="lp" aria-pressed="false">La Perouse Bank</button>
+    </div>
+    <div class="inputs">
+      <label for="t-hs">Swell height (ft)<input id="t-hs" type="number" step="0.5" min="1" max="40" value="10" inputmode="decimal"></label>
+      <label for="t-tp">Period (s)<input id="t-tp" type="number" step="1" min="6" max="25" value="13" inputmode="numeric"></label>
+      <label for="t-dir" id="t-dir-l">Direction from (°)<input id="t-dir" type="number" step="1" min="200" max="340" value="285" inputmode="numeric"></label>
+      <label for="t-at">Reading time<input id="t-at" type="datetime-local"></label>
+      <button class="go" id="t-live" type="button">Use latest reading</button>
+    </div>
+    <div class="top" style="grid-template-columns:auto auto 1fr">
+      <div class="big"><b id="t-eta">–</b><span id="t-etal">Arrives at Angeles Point</span></div>
+      <div class="big"><b id="t-dur">–</b><span>Travel time</span></div>
+      <div><p class="verdict" id="t-verdict"></p><ul class="windows" id="t-notes"></ul></div>
     </div>
   </section>
 
@@ -266,6 +291,48 @@ function save(){}
 const q=new URLSearchParams(location.search);
 $("day").value=/^\d{4}-\d\d-\d\d$/.test(q.get("date")||"")?q.get("date"):localDate(Date.now());
 check();
+
+// ---- arrival-time calculator ----
+(()=>{
+ const g=9.81, DEPTH=150, NB_AP=91000, LP_NB=105000; // m: Neah Bay→Angeles Point down the Strait; La Perouse→Strait mouth on the open ocean
+ const cgDeep=T=>g*T/(4*Math.PI);
+ const cgDepth=(T,h)=>{const w=2*Math.PI/T;let k=w*w/g;for(let i=0;i<60;i++)k=w*w/(g*Math.tanh(k*h));const c=w/k;return c*0.5*(1+2*k*h/Math.sinh(2*k*h))};
+ const hours=(b,T)=>(b==="lp"?LP_NB/cgDeep(T):0)/3600+NB_AP/cgDepth(T,DEPTH)/3600;
+ let buoy="neah";
+ const toLocalInput=ms=>{const p=localParts(ms);const mm=new Intl.DateTimeFormat("en-CA",{timeZone:TZ,minute:"2-digit"}).format(new Date(ms)).padStart(2,"0");return `${p.year}-${p.month}-${p.day}T${p.hour}:${mm}`};
+ const fromLocalInput=v=>{if(!v)return Date.now();const guess=Date.parse(v+":00Z");const p=localParts(guess);const shown=Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${v.slice(14,16)}:00Z`);return guess-(shown-guess)};
+ const fmtT=ms=>new Date(ms).toLocaleString("en-US",{timeZone:TZ,weekday:"short",hour:"numeric",minute:"2-digit"});
+ function calc(){
+  const T=parseFloat($("t-tp").value), hsFt=parseFloat($("t-hs").value), dir=parseFloat($("t-dir").value);
+  if(!(T>=5&&T<=30))return;
+  const t0=fromLocalInput($("t-at").value), hr=hours(buoy,T), eta=t0+hr*H;
+  const lo=t0+hours(buoy,T+1)*H, hi=t0+hours(buoy,Math.max(5,T-1))*H; // ±1 s of period
+  $("t-eta").textContent=new Date(eta).toLocaleTimeString("en-US",{timeZone:TZ,hour:"numeric",minute:"2-digit"});
+  $("t-etal").textContent=`Arrives at Angeles Point · ${new Date(eta).toLocaleDateString("en-US",{timeZone:TZ,weekday:"short",month:"short",day:"numeric"})}`;
+  const hh=Math.floor(hr),mm=Math.round((hr-hh)*60);$("t-dur").textContent=`${hh} h ${String(mm).padStart(2,"0")} m`;
+  const notes=[`Likely between ${fmtT(lo)} and ${fmtT(hi)} (period ±1 s). Peak period readings jump in steps, so treat it as a window, not a minute.`];
+  if(buoy==="lp")notes.push(`About ${Math.round(LP_NB/cgDeep(T)/3600*10)/10} h to the Strait mouth at Neah Bay, then ${Math.round(NB_AP/cgDepth(T,DEPTH)/3600*10)/10} h down the Strait.`);
+  let verdict="";
+  if(buoy==="neah"&&isFinite(hsFt)&&isFinite(dir)){const e=estimate(hsFt/3.281,T,dir,null);
+   if(e&&e.n>=3){verdict=`Expect about ${(e.ap*3.281).toFixed(1)} ft at Angeles Point, with a ${Math.round(e.p*100)}% chance of 3.9 ft+ at 10 s+.`;$("t-verdict").className="verdict "+(e.p>=0.5?"ok":e.p>=0.25?"maybe":"no")}
+   else{verdict="This swell is outside the range of the record (230–319°, 5 ft+), so there's no size estimate for it.";$("t-verdict").className="verdict no"}}
+  else if(buoy==="lp"){verdict="La Perouse Bank doesn't report direction, so there's no size estimate; check Neah Bay as the swell passes it.";$("t-verdict").className="verdict"}
+  $("t-verdict").textContent=verdict;
+  $("t-notes").innerHTML=notes.map(n=>`<li>${n}</li>`).join("");
+ }
+ document.querySelectorAll("#tb-buoy button").forEach(b=>b.addEventListener("click",()=>{buoy=b.dataset.b;document.querySelectorAll("#tb-buoy button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("t-dir-l").style.display=buoy==="lp"?"none":"";calc()}));
+ ["t-hs","t-tp","t-dir","t-at"].forEach(id=>$(id).addEventListener("input",calc));
+ $("t-live").addEventListener("click",async()=>{
+  const btn=$("t-live");btn.disabled=true;
+  try{const rows=await fetchJSON(`data/${buoy==="lp"?"lp_buoy":"neah_buoy"}.json?v=${Math.floor(Date.now()/3e5)}`);
+   const r=rows.filter(x=>x.wave_ft!=null&&x.period_s!=null).sort((a,b)=>a.utc<b.utc?-1:1).pop();
+   if(r){$("t-hs").value=r.wave_ft;$("t-tp").value=r.period_s;$("t-at").value=toLocalInput(Date.parse(r.utc));
+    if(buoy==="neah"){const h=await latestNeah();if(h&&h.d!=null)$("t-dir").value=h.d}}
+  }catch(e){}
+  btn.disabled=false;calc()});
+ $("t-at").value=toLocalInput(Date.now());
+ calc();
+})();
 </script>
 </body>
 </html>
