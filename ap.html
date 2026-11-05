@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/d3.min.js"></script>
 <script src="assets/dash.js"></script>
+<script src="assets/live.js"></script>
 </head>
 <body>
 <nav class="site-nav"><a href="./">Home</a><a href="ap.html" aria-current="page">Angeles Point</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
@@ -632,7 +633,7 @@
     tides: 'data/tides.json', currents: 'data/currents.json', sun: 'data/sun.json', wind: 'data/wind.json',
     ap_buoy: 'data/ap_buoy.json', neah_buoy: 'data/neah_buoy.json', lp_buoy: 'data/lp_buoy.json',
     swells: 'data/swells.json', wind_obs: 'data/wind_obs.json',
-  }, ['buoys', 'swells', 'wind_obs', 'tides', 'currents', 'wind']);
+  }, ['buoys', 'swells', 'wind_obs'], { tides: live.apTides, currents: live.apCurrents, wind: live.apWind, sun: live.apSun });
 })();
 </script>
 <p class="site-updated" id="updated"></p>

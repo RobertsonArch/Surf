@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/d3.min.js"></script>
 <script src="assets/dash.js"></script>
+<script src="assets/live.js"></script>
 </head>
 <body>
 <nav class="site-nav"><a href="./">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html" aria-current="page">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
@@ -494,7 +495,7 @@
   dash.load({
     tofino: 'data/tofino_wind.json', tides: 'data/tofino_tides.json', sun: 'data/tofino_sun.json',
     buoy: 'data/buoys.json', swells: 'data/swells.json',
-  }, ['buoys', 'swells', 'tofino_wind', 'tofino_tides']);
+  }, ['buoys', 'swells'], { tofino: live.tofinoWind, tides: live.tofinoTides, sun: live.tofinoSun });
 })();
 </script>
 <p class="site-updated" id="updated"></p>

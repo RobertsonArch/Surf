@@ -552,7 +552,8 @@ def main():
     job("tofino_wind", tofino_wind)
     job("tofino_tides", tofino_tides)
     hour = NOW.astimezone(TZ_WA).hour
-    if "--calendar" in sys.argv or hour in (3, 4) or not os.path.exists(os.path.join(DATA, "cal_tides.json")):
+    daily = hour == 3 and NOW.minute < 10
+    if "--calendar" in sys.argv or daily or not os.path.exists(os.path.join(DATA, "cal_tides.json")):
         job("calendar", calendar)
 
     meta["updated"] = NOW.isoformat(timespec="seconds")

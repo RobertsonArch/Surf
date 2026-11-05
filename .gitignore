@@ -1,0 +1,5 @@
+# Fast-changing data is built by the workflow on every run and deployed straight to Pages.
+data/*.json
+# Kept in git: the buoy archive and the 6-month calendar predictions (committed once a day).
+!data/cal_tides.json
+!data/cal_currents.json

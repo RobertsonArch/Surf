@@ -6,6 +6,8 @@ window.dash = (() => {
   const calcs = {};
   let sources = {};
   let watch = [];
+  let liveMap = {};
+  let liveOk = null;
   const css = getComputedStyle(document.documentElement);
   const colors = [0, 1, 2, 3, 4].map((i) => css.getPropertyValue(`--series-${i}`).trim() || '#888');
 
@@ -36,13 +38,14 @@ window.dash = (() => {
     const mins = Math.round((Date.now() - Date.parse(m.updated)) / 60000);
     const ago = mins < 2 ? 'just now' : mins < 90 ? `${mins} min ago` : `${Math.round(mins / 60)} h ago`;
     const bad = Object.entries(m.sources || {}).filter(([k, v]) => v.ok === false && watch.includes(k)).map(([k]) => k);
-    el.textContent = `Data updated ${ago}` + (bad.length ? ` · could not refresh: ${bad.join(', ')}` : '');
-    el.classList.toggle('stale', mins > 150 || bad.length > 0);
+    el.textContent = `Buoys and measured wind updated ${ago}` + (liveOk === true ? ' · tides and forecasts loaded live' : liveOk === false ? ' · live tide/forecast fetch failed, showing the last saved copy' : '') + (bad.length ? ` · could not refresh: ${bad.join(', ')}` : '');
+    el.classList.toggle('stale', mins > 45 || bad.length > 0);
   }
 
-  async function load(map, metaKeys) {
+  async function load(map, metaKeys, liveFns) {
     sources = map;
     if (metaKeys) watch = metaKeys;
+    if (liveFns) liveMap = liveFns;
     const bust = Math.floor(Date.now() / 120000);
     await Promise.all(Object.entries({ ...map, meta: 'data/meta.json' }).map(async ([id, url]) => {
       try {
@@ -53,6 +56,14 @@ window.dash = (() => {
         if (!store[id] || store[id].status !== 'ok') store[id] = { status: 'error', data: [] };
       }
     }));
+    render();
+    const ids = Object.keys(liveMap);
+    if (!ids.length) return;
+    if (window.live) window.live.reset();
+    const res = await Promise.allSettled(ids.map((id) => liveMap[id]()));
+    let okN = 0;
+    res.forEach((r, i) => { if (r.status === 'fulfilled' && Array.isArray(r.value) && r.value.length) { store[ids[i]] = { status: 'ok', data: r.value }; okN++; } });
+    liveOk = okN === ids.length ? true : okN === 0 ? false : true;
     render();
   }
 
