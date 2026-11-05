@@ -40,7 +40,7 @@ window.hourly = (() => {
     const tide = curve((o.tides || []).map((r) => ({ x: mins(r.at), v: +r.height_ft })).sort((a, b) => a.x - b.x));
     const cur = o.currents ? curve(o.currents.map((r) => ({ x: mins(r.at), v: r.type === 'Flood' ? +r.speed_kt : r.type === 'Ebb' ? -r.speed_kt : 0 })).sort((a, b) => a.x - b.x)) : null;
     const sun = Object.fromEntries((o.sun || []).map((r) => [r.day, r]));
-    const waves = (o.waves || []).map((w) => ({ label: w.label, map: Object.fromEntries((w.rows || []).map((r) => [localKey(Date.parse(r.utc), o.tz), r])) }));
+    const waves = (o.waves || []).map((w) => ({ label: w.label, dir: !!w.dir, map: Object.fromEntries((w.rows || []).map((r) => [localKey(Date.parse(r.utc), o.tz), r])) }));
     const cols = hours.map((r) => {
       const t = mins(r.at), s = sun[r.day];
       const light = s ? (t % 1440) + 30 >= hm(s.sunrise) && (t % 1440) + 30 <= hm(s.sunset) : r.is_day === 1;
@@ -70,7 +70,8 @@ window.hourly = (() => {
         const f = w.map[c.r.at];
         if (!f) return '<td class="mut">–</td>';
         const tr = f.trains[0];
-        return `<td title="${f.trains.map((x) => `${x.height_ft} ft @ ${x.period_s} s ${x.direction}`).join(' · ')}">${f.hs_ft}<small> ft</small>${tr ? `<br><small>${Math.round(tr.period_s)}s ${tr.direction}</small>` : ''}</td>`;
+        const sub = tr ? (w.dir ? `<br><small>${Math.round(tr.period_s)}s</small><br>${ARROW(tr.dir_deg)}<small> ${tr.direction} ${tr.dir_deg}°</small>` : `<br><small>${Math.round(tr.period_s)}s</small>`) : '';
+        return `<td title="${f.trains.map((x) => `${x.height_ft} ft @ ${x.period_s} s ${x.direction}`).join(' · ')}">${f.hs_ft}<small> ft</small>${sub}</td>`;
       });
     });
     html += row('Tide ft', (c) => `<td class="${o.elwha && c.th != null && !(c.th >= 0 && c.th <= 6) ? 'mut' : ''}">${c.th == null ? '–' : c.th.toFixed(1)}</td>`);

@@ -163,7 +163,7 @@
 
   <section class="sg-card" id="hourly">
     <h2>Hourly forecast</h2>
-    <p class="sg-note">Today at Tofino, hour by hour (earlier hours greyed out). Swell is the model forecast at La Perouse Bank. Darker hour labels are daylight. Scroll sideways for more.</p>
+    <p class="sg-note">Today at Tofino, hour by hour (earlier hours greyed out). Swell is the model forecast at Neah Bay and La Perouse Bank. Darker hour labels are daylight. Scroll sideways for more.</p>
     <div data-draw="hourly">—</div>
     <p class="src">Check the source: <a href="https://open-meteo.com/en/docs?latitude=49.12&longitude=-125.9&hourly=temperature_2m,precipitation_probability,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=America%2FVancouver" target="_blank" rel="noopener">Open-Meteo forecast ↗</a> · <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46206" target="_blank" rel="noopener">Stormsurf, La Perouse Bank ↗</a> · <a href="https://www.tides.gc.ca/en/stations/08615" target="_blank" rel="noopener">DFO tides, Tofino ↗</a></p>
   </section>
@@ -516,7 +516,7 @@
     if (!ok('tofino')) return reset(el, 'tofino');
     el.classList.remove('dash-skeleton');
     const fc = ok('wave_forecast') ? dash.data('wave_forecast').data.stations || {} : {};
-    hourly.render(el, { tz: TZ, wind: rows('tofino'), tides: rows('tides'), sun: rows('sun'), waves: [{ label: 'La Perouse', rows: fc['46206'] }] });
+    hourly.render(el, { tz: TZ, wind: rows('tofino'), tides: rows('tides'), sun: rows('sun'), waves: [{ label: 'Neah Bay', rows: fc['46087'], dir: true }, { label: 'La Perouse', rows: fc['46206'] }] });
   });
   dash.draw('buoyForecast', (el) => buoyForecast.section(el, [
     { id: '46206', name: 'La Perouse Bank', obsId: 'buoy', obs: (r) => r.filter((x) => x.buoy === 'La Perouse Bank'), color: dash.colors[0] },
