@@ -68,7 +68,7 @@ a { color: inherit; }
 .src a:hover { color: var(--color-fg); }
 .hr-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .hr-t { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; font-size: 12.5px; }
-.hr-t th, .hr-t td { text-align: center; padding: 5px 4px; min-width: 40px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; line-height: 1.25; }
+.hr-t th, .hr-t td { text-align: center; padding: 5px 5px; min-width: 52px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; line-height: 1.25; }
 .hr-t thead th { font-weight: 600; color: var(--color-fg); font-size: 12px; vertical-align: bottom; }
 .hr-t thead th .d { display: block; font-size: 10.5px; color: var(--color-fg-muted); min-height: 1.2em; }
 .hr-t th.nd, .hr-t td.nd { border-left: 1px solid var(--color-border-line); }

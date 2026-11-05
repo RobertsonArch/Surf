@@ -78,7 +78,7 @@ window.hourly = (() => {
     if (cur) html += row('Current kt', (c) => `<td class="mut">${c.cv == null ? '–' : Math.abs(c.cv) < 0.1 ? 'S' : (c.cv > 0 ? 'F' : 'E') + Math.abs(c.cv).toFixed(1)}</td>`);
     el.innerHTML = `<div class="hr-wrap">${html}</tbody></table></div>`;
     const w = el.querySelector('.hr-wrap'), n = el.querySelector('thead th.now');
-    if (w && n) requestAnimationFrame(() => { w.scrollLeft = Math.max(0, n.offsetLeft - 90); });
+    if (w && n) requestAnimationFrame(() => { const lw = (el.querySelector('thead th.rl') || {}).offsetWidth || 80; w.scrollLeft = Math.max(0, n.offsetLeft - lw); });
   }
   return { render };
 })();
