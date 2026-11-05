@@ -249,6 +249,8 @@ def buoy_rows(station, spec=None, tz=TZ):
                "mwd_deg": fnum(r.get("MWD")),
                "wind_kmh": None if fnum(r.get("WSPD")) is None else round(fnum(r["WSPD"]) * 3.6),
                "_t": r["t"]}
+        if row["period_s"] is None and out and (r["t"] - out[-1]["_t"]).total_seconds() <= 40 * 60:
+            row["period_s"] = out[-1]["period_s"]  # some 10-minute rows report height without period
         if row["period_s"] is not None:
             row["period_s"] = round(row["period_s"])
         swd, dtype = None, None
