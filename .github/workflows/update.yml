@@ -13,6 +13,7 @@ on:
         default: false
 
 permissions:
+  actions: write
   contents: write
   pages: write
   id-token: write
@@ -24,7 +25,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -53,3 +54,13 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@v4
         timeout-minutes: 5
+      # GitHub's own timer only fires every 30-60 min in practice, so each run
+      # waits out the rest of its 10 minutes and then starts the next one.
+      # (The timer above stays as a backup that restarts the chain if it breaks.)
+      - name: Start the next run in about 10 minutes
+        if: always() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 480   # the fetch and deploy above take about 1-2 minutes
+          gh workflow run update.yml --repo "${{ github.repository }}" --ref main
