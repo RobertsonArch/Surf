@@ -65,8 +65,10 @@
       <label>Timing method<select id="method">
         <option value="xcorr">Whole rise, cross-correlated (most precise)</option>
         <option value="rise">When it first rises past a height</option>
+        <option value="period">When the period first jumps past a value (groundswell forerunners)</option>
         <option value="peak">Peak height</option>
       </select></label>
+      <label id="pthr-l" hidden>Period (s)<input type="number" id="pthr" value="14" step="1" min="8" max="25" inputmode="numeric"></label>
       <label id="thr-l" hidden>Height (ft)<input type="number" id="thr" value="10" step="0.5" min="1" inputmode="decimal"></label>
     </div>
     <div class="pills" id="buoys" style="margin-bottom:10px"></div>
@@ -95,7 +97,7 @@
 
   <section class="card">
     <h2>How it works</h2>
-    <p class="note" style="margin:0">A swell crosses the ocean as a long, nearly straight wavefront moving at the group speed for its period (about 2.8 × period in km/h). The arrival time at each buoy, together with where the buoys are, fixes one straight front: its direction and its speed. With more than three buoys the tool finds the best-fitting front, and the “fit within” figure says how far the worst-fitting times are from it. Because the NOMAD buoys run in a near-straight line from southeast to northwest, a buoy well off that line (West Washington, 300 NM west of Aberdeen, or La Perouse Bank) is what pins down the direction across it. The speed is a built-in check: if it doesn’t match the swell’s period, the timing has probably locked onto different parts of the swell at different buoys, or the swell isn’t a single clean train. The ± range comes from shifting each buoy’s time by up to a few minutes either way, or by half an hour for the peak and height methods, which only have hourly readings to work with. The NOMAD and Canadian buoys report height and period every hour but not direction, which is why the timing has to do the work. West Washington does measure direction, so its own reading is a useful extra check.</p>
+    <p class="note" style="margin:0">A swell crosses the ocean as a long, nearly straight wavefront moving at the group speed for its period (about 2.8 × period in km/h). The arrival time at each buoy, together with where the buoys are, fixes one straight front: its direction and its speed. With more than three buoys the tool finds the best-fitting front, and the “fit within” figure says how far the worst-fitting times are from it. Because the NOMAD buoys run in a near-straight line from southeast to northwest, a buoy well off that line (West Washington, 300 NM west of Aberdeen, or La Perouse Bank) is what pins down the direction across it. The speed is a built-in check: if it doesn’t match the swell’s period, the timing has probably locked onto different parts of the swell at different buoys, or the swell isn’t a single clean train. The ± range comes from shifting each buoy’s time by up to a few minutes either way, or by half an hour for the peak, height and period methods, which only have hourly readings to work with. The period method times the forerunners: the longest-period waves of a distant groundswell travel fastest and show up first as a jump in period, often hours before the height rises much, which makes it the cleanest signal when there’s local wind sea on top. Pick a period a little below the swell’s peak period (for a 17 s swell, try 15 s). The NOMAD and Canadian buoys report height and period every hour but not direction, which is why the timing has to do the work. West Washington does measure direction, so its own reading is a useful extra check.</p>
     <p class="src">Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=46036" target="_blank" rel="noopener">South Nomad ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46004" target="_blank" rel="noopener">Middle Nomad ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46184" target="_blank" rel="noopener">North Nomad ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46005" target="_blank" rel="noopener">West Washington ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse Bank ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46132" target="_blank" rel="noopener">South Brooks ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay ↗</a> · <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46087" target="_blank" rel="noopener">Stormsurf, Neah Bay forecast ↗</a></p>
   </section>
 </main>
@@ -160,6 +162,17 @@
   }
   const peakT = (g) => { let k = -1; g.v.forEach((x, i) => { if (x != null && (k < 0 || x > g.v[k])) k = i; }); return k < 0 ? null : g.ts[k]; };
   const riseT = (g, thr) => { for (let i = 1; i < g.v.length; i++) if (g.v[i] != null && g.v[i - 1] != null && g.v[i - 1] < thr && g.v[i] >= thr) return g.ts[i - 1] + (thr - g.v[i - 1]) / (g.v[i] - g.v[i - 1]) * H; return null; };
+  // first hour the dominant period reaches thr, after at least two hours below it
+  const periodT = (m, T0, T1, thr) => {
+    const rows = [...m.values()].filter((r) => r.p != null && r.t >= T0 && r.t <= T1).sort((a, b) => a.t - b.t);
+    let below = 0;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].p < thr) { below++; continue; }
+      if (below >= 2) return (rows[i - 1].t + rows[i].t) / 2;
+      below = 0;
+    }
+    return null;
+  };
   const steepest = (g) => { const d = diff(smooth(g.v)); let k = -1; d.forEach((x, i) => { if (x != null && (k < 0 || x > d[k])) k = i; }); return k < 0 ? null : g.ts[k] - H / 2; };
 
   // least-squares fit of a straight wavefront, t = t0 + sx·x + sy·y, through every buoy with a time
@@ -197,6 +210,8 @@
     const { maps, gs, T0, T1 } = data;
     const method = $('method').value, thr = parseFloat($('thr').value);
     $('thr-l').hidden = method !== 'rise';
+    $('pthr-l').hidden = method !== 'period';
+    const pthr = parseFloat($('pthr').value);
     // arrival times
     let times = B.map(() => null), unc = 0.5, msg = '';
     if (method === 'xcorr') {
@@ -208,6 +223,10 @@
       unc = 0.15;
       const q = lags.slice(1).map((l, i) => `${B[i + 1].name} ${l ? Math.round(l.r * 100) + '%' : 'no match'}`).join(', ');
       msg = anchor ? `Match quality against ${B[0].name}: ${q} (above 70% is a clean match; buoys without a match are left out).` : 'Couldn’t find the swell rising at ' + B[0].name + '. Try a window that covers one clear swell arriving, or switch to the peak or height method.';
+    } else if (method === 'period') {
+      times = B.map((b, i) => periodT(maps[i], T0, T1, pthr));
+      const miss = B.filter((b, i) => times[i] == null).map((b) => b.name);
+      if (miss.length) msg = `No jump to ${pthr} s found at ${miss.join(', ')} in this window (it needs at least two readings below ${pthr} s first). Try a lower period or a wider window.`;
     } else if (method === 'peak') times = gs.map(peakT);
     else times = gs.map((g) => riseT(g, thr));
     // an arrival has to fall inside the readings we actually have for that buoy
@@ -245,8 +264,11 @@
     const spread = froms.length ? froms[Math.floor(froms.length * 0.9)] : 180;
     // period check
     const per = (mp, t) => { let best = null; mp.forEach((r) => { if (r.p && Math.abs(r.t - t) <= 3 * H && (!best || Math.abs(r.t - t) < Math.abs(best.t - t))) best = r; }); return best; };
-    const pers = times.map((t, i) => per(maps[i], t)).filter(Boolean).map((r) => r.p);
-    const Tm = pers.length ? pers.reduce((a, b) => a + b, 0) / pers.length : null;
+    // the swell's period: the longest period each buoy reports in the 6 hours after its arrival time
+    // (right at a period jump the reading can still be the old, shorter period)
+    const swellP = (mp, t) => { let mx = null; mp.forEach((r) => { if (r.p && r.t >= t - H && r.t <= t + 6 * H && (mx == null || r.p > mx)) mx = r.p; }); return mx; };
+    const pers = times.map((t, i) => (t == null ? null : swellP(maps[i], t))).filter((v) => v != null).sort((a, b) => a - b);
+    const Tm = pers.length ? pers[Math.floor(pers.length / 2)] : null; // median
     const cg = Tm ? 2.81 * Tm : null; // deep-water group speed, km/h
     const ratio = cg ? sol.kmh / cg : null;
     const etaNB = sol.at(NB), etaLP = sol.at(LP);
@@ -318,6 +340,7 @@
   pills();
   $('method').addEventListener('change', () => data && draw());
   $('thr').addEventListener('input', () => data && draw());
+  $('pthr').addEventListener('input', () => data && draw());
   let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => data && draw(), 200); });
   setH(72);
 })();
