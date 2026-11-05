@@ -3,6 +3,9 @@ name: Update surf data
 on:
   schedule:
     - cron: "17 * * * *"   # every hour, at :17
+  push:
+    branches: [main]
+    paths: ["scripts/**", ".github/workflows/**"]
   workflow_dispatch:
     inputs:
       calendar:
@@ -27,7 +30,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Fetch data
-        run: python scripts/fetch.py ${{ inputs.calendar && '--calendar' || '' }}
+        run: python scripts/fetch.py ${{ (inputs.calendar || github.event_name == 'push') && '--calendar' || '' }}
       - name: Commit
         run: |
           git config user.name "surf-bot"
