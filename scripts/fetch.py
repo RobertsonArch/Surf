@@ -312,14 +312,14 @@ def parse_std(txt):
     return out
 
 
-def history(station, seed=False):
+def history(station, seed=False, first_year=2020):
     """Hourly wave history per year in data/history/<station>_<year>.json as [hour, h_cm, p_ds, dir]."""
     hdir = os.path.join(DATA, "history")
     os.makedirs(hdir, exist_ok=True)
     rows = parse_std(get(f"https://www.ndbc.noaa.gov/data/realtime2/{station}.txt?t={int(NOW.timestamp())}", f"{station}.txt"))
     years = {}
     if seed:
-        for y in range(2020, NOW.year):
+        for y in range(first_year, NOW.year):
             path = os.path.join(hdir, f"{station}_{y}.json")
             if os.path.exists(path):
                 continue
@@ -650,6 +650,14 @@ def main():
         seed = "--seed" in sys.argv or not os.path.exists(os.path.join(DATA, "history", f"46087_{NOW.year - 1}.json"))
         for st in ("46087", "46267"):
             history(st, seed)
+        # Offshore buoys for swell triangulation: La Perouse Bank, the three Environment Canada NOMAD buoys,
+        # West Washington (46005) and South Brooks (46132)
+        for st in ("46206", "46036", "46004", "46184", "46005", "46132"):
+            try:
+                st_seed = "--seed" in sys.argv or not os.path.exists(os.path.join(DATA, "history", f"{st}_{NOW.year - 1}.json"))
+                history(st, st_seed, first_year=NOW.year - 2)
+            except Exception as e:
+                errors.append(f"history {st}: {e!r}")
 
     def wave_fc():
         cyc = latest_cycle()
