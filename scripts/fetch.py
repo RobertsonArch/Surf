@@ -548,17 +548,28 @@ def main():
 
     def wind_measured():
         rows = []
-        for st, name in (("46087", "Neah Bay"), ("46206", "La Perouse Bank"),
-                         ("PTAW1", "Port Angeles"), ("46088", "New Dungeness")):
+        for st, name in (("46087", "Neah Bay"), ("46206", "La Perouse Bank"), ("46088", "New Dungeness")):
             try:
                 rows += wind_obs(st, name)
             except Exception as e:
                 errors.append(f"wind {st}: {e!r}")
+        try:
+            rows += metar("KCLM", "Port Angeles airport", TZ_WA)
+        except Exception as e:
+            errors.append(f"wind KCLM: {e!r}")
+        try:
+            rows += harbor_wind()
+        except Exception as e:
+            errors.append(f"wind harbor: {e!r}")
+            try:
+                rows += [{**r, "station": "Port Angeles harbor"} for r in wind_obs("PTAW1", "Port Angeles harbor")]
+            except Exception:
+                pass
         write("wind_obs.json", rows)
 
-    def tofino_obs():
-        # Tofino / Long Beach airport (CYAZ) observations, from the aviation weather service
-        j = json.loads(get("https://aviationweather.gov/api/data/metar?ids=CYAZ&format=json&hours=24"))
+    def metar(icao, name, tz):
+        """Airport observations (METAR) from the aviation weather service, last 24 h."""
+        j = json.loads(get(f"https://aviationweather.gov/api/data/metar?ids={icao}&format=json&hours=24"))
         rows = []
         for m in j:
             t = m.get("obsTime") or m.get("reportTime")
@@ -572,11 +583,33 @@ def main():
             d = m.get("wdir")
             d = None if d in (None, "VRB") or sp == 0 else float(d)
             g = m.get("wgst")
-            rows.append({"station": "Tofino Airport", "at": at_str(t, TZ), "utc": t.isoformat(), "dir_deg": d,
+            rows.append({"station": name, "at": at_str(t, tz), "utc": t.isoformat(), "dir_deg": d,
                          "wind_dir": compass(d) if d is not None else ("VRB" if m.get("wdir") == "VRB" else None),
                          "wind_kmh": round(sp * 1.852), "gust_kmh": None if g is None else round(g * 1.852)})
         rows.sort(key=lambda r: r["utc"])
-        write("tofino_obs.json", rows)
+        return rows
+
+    def tofino_obs():
+        write("tofino_obs.json", metar("CYAZ", "Tofino Airport", TZ))
+
+    def harbor_wind():
+        """Port Angeles harbor tide station (9444090) wind straight from NOAA CO-OPS: 6-minute, current."""
+        q = urllib.parse.urlencode({"product": "wind", "station": "9444090", "range": 24, "units": "metric",
+                                    "time_zone": "gmt", "format": "json", "application": "surf_dashboard"})
+        j = json.loads(get("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" + q))
+        out = []
+        for x in j.get("data", []):
+            try:
+                sp = float(x["s"])
+            except (KeyError, ValueError):
+                continue
+            t = dt.datetime.strptime(x["t"], "%Y-%m-%d %H:%M").replace(tzinfo=UTC)
+            d = fnum(x.get("d"))
+            d = None if sp == 0 else d
+            g = fnum(x.get("g"))
+            out.append({"station": "Port Angeles harbor", "at": at_str(t, TZ_WA), "dir_deg": d, "wind_dir": compass(d),
+                        "wind_kmh": round(sp * 3.6), "gust_kmh": None if g is None else round(g * 3.6)})
+        return out
 
     def ap_tides():
         write("tides.json", tides_ap(TODAY_WA - dt.timedelta(days=1), TODAY_WA + dt.timedelta(days=2)))

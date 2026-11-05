@@ -48,11 +48,11 @@
   </section>
   <section class="now" aria-label="Wind now">
     <h2 class="grp">Wind now</h2>
-    <div><p class="nm">Port Angeles (Ediz Hook)</p><div class="big" data-draw="w_pa">—</div><div class="sub" data-draw="ws_pa"></div></div>
+    <div><p class="nm">Port Angeles airport</p><div class="big" data-draw="w_pa">—</div><div class="sub" data-draw="ws_pa"></div></div>
     <div><p class="nm">Neah Bay buoy</p><div class="big" data-draw="w_neah">—</div><div class="sub" data-draw="ws_neah"></div></div>
     <div><p class="nm">La Perouse Bank buoy</p><div class="big" data-draw="w_lp">—</div><div class="sub" data-draw="ws_lp"></div></div>
     <div><p class="nm">Tofino (Long Beach airport)</p><div class="big" data-draw="w_tof">—</div><div class="sub" data-draw="ws_tof"></div></div>
-    <p class="src">East 10+ flags east wind (NE to SE) of 10 km/h or more in the Strait. Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=PTAW1" target="_blank" rel="noopener">Port Angeles ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse buoy ↗</a> · <a href="https://aviationweather.gov/data/metar/?id=CYAZ&hours=12" target="_blank" rel="noopener">Tofino airport (METAR) ↗</a></p>
+    <p class="src">East 10+ flags east wind (NE to SE) of 10 km/h or more in the Strait. Check the source: <a href="https://aviationweather.gov/data/metar/?id=KCLM&hours=12" target="_blank" rel="noopener">Port Angeles airport (METAR) ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse buoy ↗</a> · <a href="https://aviationweather.gov/data/metar/?id=CYAZ&hours=12" target="_blank" rel="noopener">Tofino airport (METAR) ↗</a></p>
   </section>
   <section class="tiles">
     <a class="tile" href="tofino.html"><h2>Tofino/Ucluelet</h2><p>Today’s tide and wind, La Perouse Bank and Neah Bay buoys.</p></a>
@@ -83,7 +83,7 @@
     el.replaceChildren(`${r.gust_kmh != null ? `gusts ${r.gust_kmh} · ` : ''}${when}`);
     if (strait && r.dir_deg != null && r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10) { const f = document.createElement('span'); f.className = 'flag'; f.textContent = ' · East 10+'; el.append(f); }
   };
-  for (const [k, name, strait] of [['pa', 'Port Angeles', true], ['neah', 'Neah Bay', true], ['lp', 'La Perouse Bank', false]]) {
+  for (const [k, name, strait] of [['pa', 'Port Angeles airport', true], ['neah', 'Neah Bay', true], ['lp', 'La Perouse Bank', false]]) {
     dash.draw('w_' + k, (el) => { el.textContent = windBig(obs(name)); });
     dash.draw('ws_' + k, (el) => { const r = obs(name); windSub(el, r, r ? `${clock(r.at)} WA` : '', strait); });
   }
