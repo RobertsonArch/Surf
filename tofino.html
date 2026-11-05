@@ -15,6 +15,7 @@
 <script src="assets/d3.min.js"></script>
 <script src="assets/dash.js"></script>
 <script src="assets/live.js"></script>
+<script src="assets/forecast.js"></script>
 </head>
 <body>
 <nav class="site-nav"><a href="./">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html" aria-current="page">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
@@ -153,6 +154,12 @@
     <h2>Buoy Overlay</h2>
     <p class="sg-note">Wave height (ft) at La Perouse Bank and Neah Bay on one scale, over the same 24 hours.</p>
     <div class="sg-overlay" data-draw="buoyOverlay" data-source="buoy">—</div>
+  </section>
+
+  <section class="sg-card" id="forecast">
+    <h2>Buoy forecast</h2>
+    <p class="sg-note">The 7-day model forecast for each buoy, the same NOAA forecast Stormsurf charts.</p>
+    <div data-draw="buoyForecast">—</div>
   </section>
 
   <p class="sg-foot">Tides: Fisheries and Oceans Canada predictions for Tofino (chart datum). Wind forecast and daylight: Open-Meteo. Buoys: NOAA NDBC live feeds (La Perouse Bank is an Environment Canada buoy relayed by NOAA). BC time.</p>
@@ -492,10 +499,15 @@
       })
       .on('pointerleave', () => { tt.hide(); guide.style('display', 'none'); tdot.style('display', 'none'); });
   });
+  dash.draw('buoyForecast', (el) => buoyForecast.section(el, [
+    { id: '46206', name: 'La Perouse Bank', obsId: 'buoy', obs: (r) => r.filter((x) => x.buoy === 'La Perouse Bank'), color: dash.colors[0] },
+    { id: '46087', name: 'Neah Bay', obsId: 'buoy', obs: (r) => r.filter((x) => x.buoy === 'Neah Bay'), color: dash.colors[2] },
+  ], TZ));
   dash.load({
+    wave_forecast: 'data/wave_forecast.json',
     tofino: 'data/tofino_wind.json', tides: 'data/tofino_tides.json', sun: 'data/tofino_sun.json',
     buoy: 'data/buoys.json', swells: 'data/swells.json',
-  }, ['buoys', 'swells'], { tofino: live.tofinoWind, tides: live.tofinoTides, sun: live.tofinoSun });
+  }, ['buoys', 'swells', 'wave_forecast'], { tofino: live.tofinoWind, tides: live.tofinoTides, sun: live.tofinoSun });
 })();
 </script>
 <p class="site-updated" id="updated"></p>

@@ -65,7 +65,7 @@
     <p class="eyebrow">Elwha surf windows · Washington time</p>
     <h1 id="title">Elwha Calendar</h1>
   </header>
-  <div class="pills"><span class="pill">↗ Flood current</span><span class="pill">↕ Tide 0–6 ft</span><span class="pill">☀ Daylight</span><span class="pill">≈ Wind flagged for the next few days</span></div>
+  <div class="pills"><span class="pill">↗ Flood current</span><span class="pill">↕ Tide 0–6 ft</span><span class="pill">☀ Daylight</span><span class="pill">≈ Wind and Neah Bay swell forecast for the next few days</span></div>
   <div class="months" id="months"></div>
   <div class="legend">
     <span><i style="background:color-mix(in srgb,#2ea37a 16%,transparent);border-color:#2ea37a"></i>Prime: 75+ min, flood averaging 1.2+ kt</span>
@@ -174,7 +174,16 @@
         wx = { east: east.length > 0, max: d3.max(hrs, (r) => r.wind_kmh), hrs };
       }
     }
-    return { ds, sun, samples, wins, cls, turns, curs, wx };
+    // Neah Bay forecast swell arriving during the main window (about 3 h travel)
+    let sw = null;
+    const fc = ok('wave_forecast') ? (dash.data('wave_forecast').data.stations || {})['46087'] || [] : [];
+    if (wins.length && fc.length) {
+      const w = wins[0];
+      const toLocalMin = (iso) => { const t = Date.parse(iso) + 3 * 3600e3; const p = new Date(t).toLocaleString('en-CA', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ''); return { day: p.slice(0, 10), m: +p.slice(11, 13) * 60 + +p.slice(14, 16) }; };
+      const hits = fc.filter((r) => { const q = toLocalMin(r.utc); return q.day === ds && q.m >= w.start - 90 && q.m <= w.end + 30; });
+      if (hits.length) { const pk = hits.reduce((a, b) => (b.hs_ft > a.hs_ft ? b : a)); sw = { ft: pk.hs_ft, tr: pk.trains[0] }; }
+    }
+    return { ds, sun, samples, wins, cls, turns, curs, wx, sw };
   };
 
   const mini = (a, big) => {
@@ -227,6 +236,7 @@
     cards.append(card('Max current', a.curs.map((p) => `${p.r.type} ${p.r.speed_kt} kt ${p.r.time}`).join(' · ') || '—'));
     cards.append(card('Daylight', `${clock(a.sun.rise)} – ${clock(a.sun.set)}`));
     cards.append(card('Moon', `${mn.icon} ${mn.name} (~${mn.illum}%)`));
+    if (a.sw) cards.append(card('Neah Bay forecast for the window', `${a.sw.ft} ft total${a.sw.tr ? `, largest train ${a.sw.tr.height_ft} ft @ ${a.sw.tr.period_s} s ${a.sw.tr.direction}` : ''}`));
     if (a.wx) cards.append(card('Forecast wind in window', a.wx.east ? `East 10+ km/h (max ${a.wx.max})` : `OK, max ${a.wx.max} km/h`));
     const lk = document.createElement('a'); lk.className = 'calc-link'; lk.href = `calculator.html?date=${a.ds}${a.wins.length ? `&time=${String(Math.floor(a.wins[0].start / 60)).padStart(2, '0')}:${String(a.wins[0].start % 60).padStart(2, '0')}` : ''}`; lk.textContent = 'Open in the swell calculator →';
     const lp = document.createElement('p'); lp.style.margin = '10px 0 0'; lp.append(lk);
@@ -262,6 +272,7 @@
       b.append(num);
       if (a.wins.length) a.wins.slice(0, 2).forEach((w, i) => { const e = document.createElement('div'); e.className = 'w'; e.textContent = fmtWin(w); if (i) e.style.opacity = '.75'; b.append(e); });
       else b.append(Object.assign(document.createElement('div'), { className: 'nw', textContent: 'No window' }));
+      if (a.sw) b.append(Object.assign(document.createElement('div'), { className: 'wx', textContent: `NB ${Math.round(a.sw.ft)} ft${a.sw.tr ? ` ${Math.round(a.sw.tr.period_s)}s ${a.sw.tr.direction}` : ''}` }));
       if (a.wx) b.append(Object.assign(document.createElement('div'), { className: `wx ${a.wx.east ? 'bad' : 'ok'}`, textContent: a.wx.east ? 'E wind' : `Wind ok (${a.wx.max})` }));
       b.append(mini(a, false));
       b.setAttribute('aria-label', `${MONTHS[mo - 1]} ${d}: ${NAMES[a.cls]}${a.wins.length ? ', ' + fmtWin(a.wins[0]) : ''}`);
@@ -271,7 +282,7 @@
   };
   dash.draw('calendar', render);
   document.body.setAttribute('data-draw', 'calendar');
-  dash.load({ cal_tides: 'data/cal_tides.json', cal_currents: 'data/cal_currents.json', wind: 'data/wind.json' }, [], { wind: live.apWind });
+  dash.load({ cal_tides: 'data/cal_tides.json', cal_currents: 'data/cal_currents.json', wind: 'data/wind.json', wave_forecast: 'data/wave_forecast.json' }, [], { wind: live.apWind });
 })();
 </script>
 </body>

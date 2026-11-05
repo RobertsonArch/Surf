@@ -355,6 +355,56 @@ def history(station, seed=False):
             json.dump([[k, *v] for k, v in sorted(old.items())], f, separators=(",", ":"))
 
 
+# ---------------------------------------------------------------- GFS-Wave buoy forecast (what Stormsurf charts)
+
+NOMADS = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod"
+
+
+def wave_bulletin(station, cycle):
+    """Parse NOAA's GFS-Wave point bulletin. Bulletin dir is where waves travel to; we return 'from'."""
+    d, hh = cycle
+    txt = get(f"{NOMADS}/gfs.{d:%Y%m%d}/{hh:02d}/wave/station/bulls.t{hh:02d}z/gfswave.{station}.bull")
+    base = dt.datetime(d.year, d.month, d.day, hh, tzinfo=UTC)
+    out = []
+    prev = base
+    for ln in txt.splitlines():
+        m = re.match(r"\s*\|\s*(\d+)\s+(\d+)\s*\|\s*([\d.]+)", ln)
+        if not m:
+            continue
+        day, hour, hst = int(m.group(1)), int(m.group(2)), float(m.group(3))
+        t = prev.replace(hour=hour, minute=0)
+        while t.day != day or t < prev:  # walk forward to the row's day of month
+            t = (t + dt.timedelta(days=1)).replace(hour=hour)
+            if (t - prev).days > 3:
+                break
+        prev = t
+        trains = []
+        for cell in ln.split("|")[3:]:
+            v = cell.split()
+            if len(v) >= 3:
+                h, tp, to = float(v[0]), float(v[1]), float(v[2])
+                trains.append({"height_ft": round(h * M2FT, 1), "period_s": round(tp, 1),
+                               "dir_deg": round((to + 180) % 360), "direction": compass((to + 180) % 360)})
+        trains.sort(key=lambda x: -x["height_ft"])
+        out.append({"utc": t.isoformat(), "hs_ft": round(hst * M2FT, 1), "hs_m": hst, "trains": trains[:3]})
+    if not out:
+        raise ValueError("empty bulletin")
+    return out
+
+
+def latest_cycle(station="46087"):
+    t = NOW - dt.timedelta(hours=4)  # bulletins appear ~4 h after the cycle time
+    for _ in range(8):
+        hh = (t.hour // 6) * 6
+        cyc = (t.date(), hh)
+        try:
+            wave_bulletin(station, cyc)
+            return cyc
+        except Exception:
+            t = t.replace(hour=hh, minute=0) - dt.timedelta(hours=6)
+    raise RuntimeError("no GFS-Wave cycle found")
+
+
 # ---------------------------------------------------------------- NOAA CO-OPS
 
 def coops(params, key):
@@ -468,15 +518,15 @@ def main():
         ap = buoy_rows("46267", spec67, TZ_WA)
         neah = buoy_rows("46087", spec87, TZ_WA)
         lp = buoy_rows("46206", None, TZ_WA)
-        write("ap_buoy.json", strip(ap, ["at", "wave_ft", "period_s", "direction", "dir_type"]))
-        write("neah_buoy.json", strip(neah, ["at", "wave_ft", "period_s", "direction", "dir_type"]))
-        write("lp_buoy.json", strip(lp, ["at", "wave_ft", "period_s", "wind_kmh"]))
+        write("ap_buoy.json", strip(ap, ["at", "utc", "wave_ft", "period_s", "direction", "dir_type"]))
+        write("neah_buoy.json", strip(neah, ["at", "utc", "wave_ft", "period_s", "direction", "dir_type"]))
+        write("lp_buoy.json", strip(lp, ["at", "utc", "wave_ft", "period_s", "wind_kmh"]))
         bc = lambda rows: [{**r, "at": dt.datetime.fromisoformat(r["utc"]).astimezone(TZ).strftime("%Y-%m-%dT%H:%M")} for r in rows]
         lp, neah = bc(lp), bc(neah)
-        both = ([{"buoy": "La Perouse Bank", "at": r["at"], "wave_ft": r["wave_ft"], "swell_dir": None,
+        both = ([{"buoy": "La Perouse Bank", "at": r["at"], "utc": r["utc"], "wave_ft": r["wave_ft"], "swell_dir": None,
                   "period_s": r["period_s"], "avg_period_s": r["avg_period_s"], "wind_kmh": r["wind_kmh"],
                   "dir_type": None} for r in lp]
-                + [{"buoy": "Neah Bay", "at": r["at"], "wave_ft": r["wave_ft"], "swell_dir": r["direction"],
+                + [{"buoy": "Neah Bay", "at": r["at"], "utc": r["utc"], "wave_ft": r["wave_ft"], "swell_dir": r["direction"],
                     "period_s": r["period_s"], "avg_period_s": r["avg_period_s"], "wind_kmh": r["wind_kmh"],
                     "dir_type": r["dir_type"]} for r in neah])
         write("buoys.json", both)
@@ -542,8 +592,20 @@ def main():
         for st in ("46087", "46267"):
             history(st, seed)
 
+    def wave_fc():
+        cyc = latest_cycle()
+        out = {"cycle": dt.datetime(cyc[0].year, cyc[0].month, cyc[0].day, cyc[1], tzinfo=UTC).isoformat(),
+               "model": "NOAA GFS-Wave (WAVEWATCH III)", "stations": {}}
+        for st in ("46087", "46206", "46267"):
+            try:
+                out["stations"][st] = wave_bulletin(st, cyc)
+            except Exception as e:
+                errors.append(f"forecast {st}: {e!r}")
+        write("wave_forecast.json", out)
+
     job("buoys", buoys)
     job("history", hist)
+    job("wave_forecast", wave_fc)
     job("swells", swells)
     job("wind_obs", wind_measured)
     job("tides", ap_tides)

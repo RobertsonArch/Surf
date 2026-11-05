@@ -15,6 +15,7 @@
 <script src="assets/d3.min.js"></script>
 <script src="assets/dash.js"></script>
 <script src="assets/live.js"></script>
+<script src="assets/forecast.js"></script>
 </head>
 <body>
 <nav class="site-nav"><a href="./">Home</a><a href="ap.html" aria-current="page">Angeles Point</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
@@ -181,6 +182,12 @@
     <h2>Buoy Overlay</h2>
     <p class="ap-note">Wave height (ft) at Angeles Point, Neah Bay and La Perouse Bank on one scale, over the same 24 hours.</p>
     <div class="ap-overlay" data-draw="buoyOverlay" data-source="ap_buoy neah_buoy lp_buoy">—</div>
+  </section>
+
+  <section class="ap-card" id="forecast">
+    <h2>Buoy forecast</h2>
+    <p class="ap-note">The 7-day model forecast for each buoy, the same NOAA forecast Stormsurf charts. In the Strait, model forecasts tend to overcall what reaches the Elwha, so read it as a heads-up and trust the live buoys.</p>
+    <div data-draw="buoyForecast">—</div>
   </section>
 
   <p class="ap-foot">Tides: NOAA predictions, Port Angeles (9444090). Current: NOAA predictions for Angeles Pt., 2 mi NNE (PUG1639, near surface). Buoys and measured wind: NOAA NDBC live feeds; swell trains are split from each buoy’s wave spectrum. Wind forecast and daylight: Open-Meteo. All times are Washington (Pacific) time.</p>
@@ -629,11 +636,17 @@
       })
       .on('pointerleave', () => { tt.hide(); guide.style('display', 'none'); tdot.style('display', 'none'); });
   });
+  dash.draw('buoyForecast', (el) => buoyForecast.section(el, [
+    { id: '46087', name: 'Neah Bay', obsId: 'neah_buoy', obs: (r) => r, color: dash.colors[2] },
+    { id: '46206', name: 'La Perouse Bank', obsId: 'lp_buoy', obs: (r) => r, color: dash.colors[4] },
+    { id: '46267', name: 'Angeles Point', obsId: 'ap_buoy', obs: (r) => r, color: dash.colors[0] },
+  ], TZ));
   dash.load({
+    wave_forecast: 'data/wave_forecast.json',
     tides: 'data/tides.json', currents: 'data/currents.json', sun: 'data/sun.json', wind: 'data/wind.json',
     ap_buoy: 'data/ap_buoy.json', neah_buoy: 'data/neah_buoy.json', lp_buoy: 'data/lp_buoy.json',
     swells: 'data/swells.json', wind_obs: 'data/wind_obs.json',
-  }, ['buoys', 'swells', 'wind_obs'], { tides: live.apTides, currents: live.apCurrents, wind: live.apWind, sun: live.apSun });
+  }, ['buoys', 'swells', 'wind_obs', 'wave_forecast'], { tides: live.apTides, currents: live.apCurrents, wind: live.apWind, sun: live.apSun });
 })();
 </script>
 <p class="site-updated" id="updated"></p>

@@ -52,6 +52,7 @@ td .wd{font-size:.68rem;letter-spacing:.02em}
 td .sd{display:block;white-space:nowrap;line-height:1.25;font-size:.68rem;opacity:.85}
 td.good{background:var(--goodbg);color:var(--good);font-weight:600}
 td.bad{color:var(--bad)}
+td.fcst{font-style:italic;opacity:.8}
 td.now{outline:2px solid var(--fg);outline-offset:-2px}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted)}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
@@ -162,6 +163,10 @@ async function loadDay(day){
  if(day<=today){const t0=hrs[0]-5*H,t1=hrs[hrs.length-1]+H;
   jobs.push(buoyDay("46087",t0,t1).then(m=>{out.nb=m}).catch(err=>{if(day<today)out.errors.push(["Neah Bay buoy",err])}));
   jobs.push(buoyDay("46267",hrs[0],t1).then(m=>{out.ap=m}).catch(err=>{if(day<today)out.errors.push(["Angeles Point buoy",err])}))}
+ jobs.push(fetchJSON(`data/wave_forecast.json?v=${Math.floor(Date.now()/3e5)}`).then(j=>{const m=new Map();for(const r of (j.stations||{})["46087"]||[]){const tr=r.trains[0];if(!tr)continue;m.set(Date.parse(r.utc),{t:Date.parse(r.utc),h:r.hs_m,p:tr.period_s,d:tr.dir_deg,fc:true})}
+  // the bulletin goes 3-hourly after 5 days: fill the gaps hour by hour from the row before
+  const ks=[...m.keys()].sort((a,b)=>a-b);for(let i=0;i<ks.length-1;i++)for(let t=ks[i]+H;t<ks[i+1];t+=H)m.set(t,{...m.get(ks[i]),t});
+  out.fc=m;out.fcCycle=j.cycle}).catch(()=>{}));
  const res=await Promise.all(jobs);
  const fc=res.find(r=>r&&(r.j||r.err));
  if(fc){if(fc.err)out.errors.push(["wind forecast",fc.err]);else{
@@ -185,14 +190,17 @@ function render(){
   $("windows").innerHTML="";tbl.innerHTML="";return}
  const today=localDate(Date.now());
  const hasNb=!!(lastData.nb&&lastData.nb.size), past=hasNb&&!manual&&day<today;
+ const fcMode=!manual&&day>=today&&!!(lastData.fc&&lastData.fc.size);
+ const nbAt=t=>(t<=Date.now()&&lastData.nb&&lastData.nb.get(t))||(lastData.fc&&lastData.fc.get(t))||null;
  const hours=[];for(let t=Date.parse(shift(day,-1)+"T00:00:00Z");t<Date.parse(shift(day,2)+"T00:00:00Z");t+=H){if(localDate(t)===day)hours.push(t)}
  const nowH=Math.floor(Date.now()/H)*H;
  const rows=hours.map(t=>{const h=localHour(t), tide=lastData.tide.get(t), v=lastData.cur.get(t), w=lastData.wind.get(t);
   const light=sunAlt(t+30*60e3)>=-6, tideOk=tide!=null?tide>=0&&tide<=6:null;
   const east=w?(w.deg>=45&&w.deg<=135&&w.kmh>=10):null;
-  let nbx=null;if(past){for(const L of [2,3,4]){const x=lastData.nb.get(t-L*H);if(x&&lagOf(x.p)===L){nbx=x;break}}if(!nbx)nbx=lastData.nb.get(t-3*H)||lastData.nb.get(t-2*H)||null}
-  const est=past?(nbx&&nbx.p&&nbx.d!=null?estimate(nbx.h,nbx.p,nbx.d,null):null):((isFinite(hs)&&isFinite(tp)&&isFinite(dir))?estimate(hs,tp,dir,null):null);
-  const nbNow=hasNb?lastData.nb.get(t)||null:null, apx=lastData.ap?lastData.ap.get(t)||null:null;
+  let nbx=null;if(fcMode){for(const L of [2,3,4]){const x=nbAt(t-L*H);if(x&&lagOf(x.p)===L){nbx=x;break}}if(!nbx)nbx=nbAt(t-3*H)||nbAt(t-2*H)}
+  if(past){for(const L of [2,3,4]){const x=lastData.nb.get(t-L*H);if(x&&lagOf(x.p)===L){nbx=x;break}}if(!nbx)nbx=lastData.nb.get(t-3*H)||lastData.nb.get(t-2*H)||null}
+  const est=(past||fcMode)?(nbx&&nbx.p&&nbx.d!=null?estimate(nbx.h,nbx.p,nbx.d,null):null):((isFinite(hs)&&isFinite(tp)&&isFinite(dir))?estimate(hs,tp,dir,null):null);
+  const nbNow=(hasNb&&lastData.nb.get(t))||(fcMode&&lastData.fc.get(t))||null, apx=lastData.ap?lastData.ap.get(t)||null:null;
   const works=light&&tideOk!==false&&east!==true;
   return{t,h,tide,v,w,light,tideOk,east,est,works,nbx,nbNow,apx,now:t===nowH}});
  const cell=(cls,txt,title)=>`<td class="${cls}"${title?` title="${title}"`:""}>${txt}</td>`;
@@ -207,7 +215,7 @@ function render(){
   return cell(r.light?"":"bad",r.light?"✓":"dark")}).join("")}</tr>`;
  html+=`<tr><th>Wind (from) km/h</th>${rows.map(r=>r.w?cell(r.east?"bad":"",`<span class="wd">${cmp(r.w.deg)}</span><span class="ws">${Math.round(r.w.kmh)}</span>`,`${Math.round(r.w.kmh)} km/h from ${cmp(r.w.deg)} (${Math.round(r.w.deg)}°)${r.w.obs?" measured":" forecast"}`):cell("","?")).join("")}</tr>`;
  html+=`<tr><th>Current kt</th>${rows.map(r=>{if(!r.v)return cell("","?");const kt=Math.abs(r.v.v)/51.44,ph=Math.abs(r.v.v)<20?"S":r.v.v>0?"F":"E",dir=r.v.v>0?r.v.fd:r.v.ed;return cell("",ph==="S"?"S":`${ph}${kt.toFixed(1)}`,ph==="S"?"Slack":`${ph==="F"?"Flood":"Ebb"} ${kt.toFixed(1)} kt toward ${Math.round(dir)}°`)}).join("")}</tr>`;
- if(hasNb)html+=`<tr><th>Neah Bay m · s · dir</th>${rows.map(r=>r.nbNow?cell("",`<span class="wd">${r.nbNow.h.toFixed(1)}</span><span class="ws">${r.nbNow.p?Math.round(r.nbNow.p)+"s":"?"}</span><span class="sd">${r.nbNow.d!=null?Math.round(r.nbNow.d)+"°":"?"}</span>`,`Neah Bay ${r.nbNow.h.toFixed(2)} m, ${r.nbNow.p??"?"} s from ${r.nbNow.d??"?"}°`):cell("","–")).join("")}</tr>`;
+ if(hasNb||fcMode)html+=`<tr><th>Neah Bay m · s · dir${fcMode?"<br><small>forecast in italics</small>":""}</th>${rows.map(r=>r.nbNow?cell(r.nbNow.fc?"fcst":"",`<span class="wd">${r.nbNow.h.toFixed(1)}</span><span class="ws">${r.nbNow.p?Math.round(r.nbNow.p)+"s":"?"}</span><span class="sd">${r.nbNow.d!=null?Math.round(r.nbNow.d)+"°":"?"}</span>`,`Neah Bay ${r.nbNow.h.toFixed(2)} m, ${r.nbNow.p??"?"} s from ${r.nbNow.d??"?"}°`):cell("","–")).join("")}</tr>`;
  if(lastData.ap&&lastData.ap.size)html+=`<tr><th>Angeles Pt actual m · s · dir</th>${rows.map(r=>{const a=r.apx;if(!a)return cell("","–");const hit=a.h>=1.0&&a.p!=null&&a.p>=10;return cell(hit?"good":"",`<span class="wd">${a.h.toFixed(1)}</span><span class="ws">${a.p?Math.round(a.p)+"s":"?"}</span><span class="sd">${a.d!=null?Math.round(a.d)+"°":"?"}</span>`,`Angeles Point measured ${a.h.toFixed(2)} m at ${a.p??"?"} s from ${a.d??"?"}°${hit?" (1.0 m+ at 10 s+)":""}`)}).join("")}</tr>`;
  tbl.innerHTML=html;
  const nowCell=tbl.querySelector("td.now");if(nowCell&&!render.scrolled){render.scrolled=true;const s=tbl.parentElement;s.scrollLeft=Math.max(0,nowCell.offsetLeft-120)}
@@ -222,7 +230,7 @@ function render(){
   $("verdict").className="verdict "+(best.est.p>=0.5?"ok":best.est.p>=0.25?"maybe":"no")}
  else{$("pct").textContent="0%";const mxE=rows.filter(r=>r.est&&r.est.n>=3).reduce((a,b)=>!a||b.est.ap>a.est.ap?b:a,null);setSize(mxE?mxE.est:null,mxE?`biggest predicted at Angeles Point, ${fmtH(mxE.h)} (outside the spot's rules)`:"predicted at Angeles Point");$("verdict").textContent=rows.some(r=>r.works)?"This swell is outside the range of the record (230–319°, 1.5 m+), so there are no odds for it.":"No hour that day fits the spot's tide, light and wind rules.";$("verdict").className="verdict no"}
  $("windows").innerHTML=wins.map(w=>{const cv=w.rows.filter(r=>r.v).map(r=>r.v.v);const curTxt=!cv.length?"current ?":(()=>{const f=cv.filter(v=>v>=20),eb=cv.filter(v=>v<=-20);const parts=[];if(f.length)parts.push(`flood to ${(Math.max(...f)/51.44).toFixed(1)} kt`);if(eb.length)parts.push(`ebb to ${(Math.max(...eb.map(Math.abs))/51.44).toFixed(1)} kt`);return parts.join(", ")||"slack"})();const ws=w.rows.filter(r=>r.w);const windTxt=!ws.length?"wind ?":(()=>{const cnt={};for(const r of ws){const c=cmp(r.w.deg);cnt[c]=(cnt[c]||0)+1}const dirs=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join("/");const sp=ws.map(r=>Math.round(r.w.kmh));const lo=Math.min(...sp),hi=Math.max(...sp);return `wind ${dirs} ${lo===hi?lo:lo+"–"+hi} km/h`})();const mx=Math.max(...w.rows.map(r=>r.est.p));const sz=w.rows.map(r=>r.est.ap),szLo=Math.min(...sz).toFixed(1),szHi=Math.max(...sz).toFixed(1),szTxt=`~${szLo===szHi?szLo:szLo+"–"+szHi} m`;const aa=w.rows.filter(r=>r.apx).map(r=>r.apx.h);const actTxt=aa.length?` · actual up to ${Math.max(...aa).toFixed(1)} m`:"";
-  return `<li>${fmtH(localHour(w.start))}–${fmtH((localHour(w.end)+1)%24)} · ${w.rows.length} h · ${windTxt} · ${curTxt} · ${szTxt} · up to ${Math.round(mx*100)}%${actTxt}</li>`}).join("")+(unknown?`<li class="maybe">Some daylight hours had no tide or wind data; they are counted as possible.</li>`:"")+(manual&&hasNb&&day<today?`<li class="maybe">Using the swell you entered instead of that day's Neah Bay readings. Press Check this day to go back to the buoy.</li>`:"")+(liveFill&&!manual?`<li>Swell is the latest Neah Bay reading, treated as holding all day.</li>`:"");
+  return `<li>${fmtH(localHour(w.start))}–${fmtH((localHour(w.end)+1)%24)} · ${w.rows.length} h · ${windTxt} · ${curTxt} · ${szTxt} · up to ${Math.round(mx*100)}%${actTxt}</li>`}).join("")+(unknown?`<li class="maybe">Some daylight hours had no tide or wind data; they are counted as possible.</li>`:"")+(manual&&hasNb&&day<today?`<li class="maybe">Using the swell you entered instead of that day's Neah Bay readings. Press Check this day to go back to the buoy.</li>`:"")+(fcMode?`<li>Each hour uses the Neah Bay swell ${day===today?"measured, or ":""}forecast by NOAA's GFS-Wave model 2–3 hours earlier (run of ${new Date(lastData.fcCycle).toLocaleString("en-US",{timeZone:TZ,month:"short",day:"numeric",hour:"numeric"})}). Type a swell above to use your own instead.</li>`:liveFill&&!manual?`<li>Swell is the latest Neah Bay reading, treated as holding all day.</li>`:"");
 }
 
 async function check(){const day=$("day").value;if(!day)return;
@@ -233,6 +241,8 @@ async function check(){const day=$("day").value;if(!day)return;
   if(day<today&&d.nb&&d.nb.size){const dayHrs=[...d.nb.values()].filter(r=>localDate(r.t)===day);const pk=(dayHrs.length?dayHrs:[...d.nb.values()]).reduce((a,b)=>b.h>a.h?b:a);
    $("ft").checked=false;$("hs").value=pk.h.toFixed(1);if(pk.p)$("tp").value=Math.round(pk.p);if(pk.d!=null)$("dir").value=pk.d;
    extra=" Swell filled from the Neah Bay buoy (day's peak shown; each hour uses that hour's reading)."}
+  if(day>today&&d.fc&&d.fc.size){const fd=[...d.fc.values()].filter(r=>localDate(r.t)===day);if(fd.length){const pk=fd.reduce((a,b)=>b.h>a.h?b:a);$("ft").checked=false;$("hs").value=pk.h.toFixed(1);$("tp").value=Math.round(pk.p);$("dir").value=pk.d;
+   extra=` Swell filled from NOAA's Neah Bay forecast (day's peak shown; each hour uses that hour's forecast).`}}
   if(day===today){const nb=await latestNeah();if(nb){$("ft").checked=false;$("hs").value=nb.h.toFixed(1);$("tp").value=Math.round(nb.p);$("dir").value=nb.d;liveFill=true;
    extra=` Swell filled from the latest Neah Bay reading (${hm(nb.t)}: ${nb.h.toFixed(1)} m, ${Math.round(nb.p)} s, ${nb.d}°).`}}
   const msgs=d.errors.map(([what,e])=>e&&e.code==="no_data"?`${what}: no readings for that date`:`${what}: couldn't load`);

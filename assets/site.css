@@ -54,3 +54,12 @@ a { color: inherit; }
 .site-updated.stale { color: var(--color-warn); }
 .dash-skeleton { color: transparent !important; background: linear-gradient(90deg, var(--cds-chart-grid), var(--color-border-line), var(--cds-chart-grid)); background-size: 200% 100%; animation: sk 1.4s infinite; border-radius: 6px; }
 @keyframes sk { to { background-position: -200% 0; } }
+.fc-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.fc-tabs button { font: inherit; font-size: var(--cds-font-size-caption); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg-muted); cursor: pointer; }
+.fc-tabs button[aria-pressed=true] { color: var(--color-fg); border-color: var(--color-fg); }
+.fc-chart { position: relative; min-height: 250px; }
+.fc-chart svg text { font-family: var(--font-anthropic-sans); font-size: 11px; fill: var(--color-fg-muted); }
+.fc-chart svg .val { fill: var(--color-fg); }
+.fc-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: 8px; box-shadow: var(--cds-shadow-popover); padding: 4px 8px; font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 2; }
+.fc-tip .t { color: var(--cds-text-secondary); }
+.fc-cap { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 6px 0 0; }
