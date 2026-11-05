@@ -79,3 +79,5 @@ a { color: inherit; }
 .hr-t td.bad { color: var(--color-bad); font-weight: 600; }
 .hr-t td.best { background: color-mix(in srgb, var(--color-ok) 85%, transparent); color: var(--color-bg); font-weight: 600; border-radius: 4px; }
 .hr-t td.okc { background: color-mix(in srgb, var(--color-ok) 22%, transparent); color: var(--color-ok); }
+.hr-t .past { opacity: .45; }
+.hr-t thead th.now { box-shadow: inset 0 -2px 0 var(--color-fg); }

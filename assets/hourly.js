@@ -1,4 +1,4 @@
-// Hourly forecast strip: the rest of today and tomorrow of weather, wind, swell and tide (and,
+// Hourly forecast strip: today, hour by hour of weather, wind, swell and tide (and,
 // for the Elwha, current and the spot's surf rules), in one scrollable table.
 window.hourly = (() => {
   const WX = (c, day) => {
@@ -34,9 +34,9 @@ window.hourly = (() => {
   function render(el, o) {
     if (!o.wind || !o.wind.length) { el.replaceChildren('Forecast unavailable right now.'); return; }
     const nowKey = localKey(Date.now(), o.tz);
-    // the rest of today and all of tomorrow
-    const tomorrow = new Date(Date.parse(`${nowKey.slice(0, 10)}T12:00:00Z`) + 864e5).toISOString().slice(0, 10);
-    const hours = o.wind.filter((r) => r.at >= nowKey && r.day <= tomorrow).sort((a, b) => (a.at < b.at ? -1 : 1));
+    // today, every hour (hours already gone are greyed out)
+    const today = nowKey.slice(0, 10);
+    const hours = o.wind.filter((r) => r.day === today).sort((a, b) => (a.at < b.at ? -1 : 1));
     const tide = curve((o.tides || []).map((r) => ({ x: mins(r.at), v: +r.height_ft })).sort((a, b) => a.x - b.x));
     const cur = o.currents ? curve(o.currents.map((r) => ({ x: mins(r.at), v: r.type === 'Flood' ? +r.speed_kt : r.type === 'Ebb' ? -r.speed_kt : 0 })).sort((a, b) => a.x - b.x)) : null;
     const sun = Object.fromEntries((o.sun || []).map((r) => [r.day, r]));
@@ -49,15 +49,16 @@ window.hourly = (() => {
       const tideOk = th != null && th >= 0 && th <= 6;
       const best = o.elwha && light && tideOk && cv != null && cv > 0.05 && !east;
       const ok = o.elwha && light && tideOk && !east;
-      return { r, light, th, cv, east, best, ok };
+      return { r, light, th, cv, east, best, ok, past: r.at < nowKey, now: r.at === nowKey };
     });
     const hdr = (c, i) => {
       const h = c.r.hour, newDay = i === 0 || h === 0;
       const d = newDay ? new Date(`${c.r.day}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }) : '';
       return `<th class="${newDay ? 'nd' : ''}${c.light ? '' : ' dk'}"><span class="d">${d}</span>${(h + 11) % 12 + 1}${h < 12 ? 'a' : 'p'}</th>`;
     };
-    const row = (label, fn) => `<tr><th class="rl">${label}</th>${cols.map(fn).join('')}</tr>`;
-    let html = `<table class="hr-t"><thead><tr><th class="rl"></th>${cols.map(hdr).join('')}</tr></thead><tbody>`;
+    const mark = (c, html) => (c.past || c.now ? html.replace(/^<(td|th)( class="([^"]*)")?/, (m, tg, _a, cl) => `<${tg} class="${[cl, c.past ? 'past' : '', c.now ? 'now' : ''].filter(Boolean).join(' ')}"`) : html);
+    const row = (label, fn) => `<tr><th class="rl">${label}</th>${cols.map((c, i) => mark(c, fn(c, i))).join('')}</tr>`;
+    let html = `<table class="hr-t"><thead><tr><th class="rl"></th>${cols.map((c, i) => mark(c, hdr(c, i))).join('')}</tr></thead><tbody>`;
     if (o.elwha) html += row('Surf rules', (c) => `<td class="${c.best ? 'best' : c.ok ? 'okc' : ''}" title="${c.best ? 'Flood, tide 0–6 ft, daylight, no east wind' : c.ok ? 'Tide 0–6 ft, daylight, no east wind' : ''}">${c.best ? 'Best' : c.ok ? '✓' : ''}</td>`);
     html += row('Weather', (c) => { const [ic, tt] = WX(c.r.code, c.r.is_day !== 0); return `<td title="${tt}">${ic}</td>`; });
     html += row('Temp °C', (c) => `<td>${c.r.temp_c ?? '–'}</td>`);
@@ -75,6 +76,8 @@ window.hourly = (() => {
     html += row('Tide ft', (c) => `<td class="${o.elwha && c.th != null && !(c.th >= 0 && c.th <= 6) ? 'mut' : ''}">${c.th == null ? '–' : c.th.toFixed(1)}</td>`);
     if (cur) html += row('Current kt', (c) => `<td class="mut">${c.cv == null ? '–' : Math.abs(c.cv) < 0.1 ? 'S' : (c.cv > 0 ? 'F' : 'E') + Math.abs(c.cv).toFixed(1)}</td>`);
     el.innerHTML = `<div class="hr-wrap">${html}</tbody></table></div>`;
+    const w = el.querySelector('.hr-wrap'), n = el.querySelector('thead th.now');
+    if (w && n) requestAnimationFrame(() => { w.scrollLeft = Math.max(0, n.offsetLeft - 90); });
   }
   return { render };
 })();
