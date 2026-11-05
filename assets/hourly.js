@@ -1,4 +1,4 @@
-// Hourly forecast strip: the next 48 hours of weather, wind, swell and tide (and,
+// Hourly forecast strip: the rest of today and tomorrow of weather, wind, swell and tide (and,
 // for the Elwha, current and the spot's surf rules), in one scrollable table.
 window.hourly = (() => {
   const WX = (c, day) => {
@@ -34,7 +34,9 @@ window.hourly = (() => {
   function render(el, o) {
     if (!o.wind || !o.wind.length) { el.replaceChildren('Forecast unavailable right now.'); return; }
     const nowKey = localKey(Date.now(), o.tz);
-    const hours = o.wind.filter((r) => r.at >= nowKey).sort((a, b) => (a.at < b.at ? -1 : 1)).slice(0, 48);
+    // the rest of today and all of tomorrow
+    const tomorrow = new Date(Date.parse(`${nowKey.slice(0, 10)}T12:00:00Z`) + 864e5).toISOString().slice(0, 10);
+    const hours = o.wind.filter((r) => r.at >= nowKey && r.day <= tomorrow).sort((a, b) => (a.at < b.at ? -1 : 1));
     const tide = curve((o.tides || []).map((r) => ({ x: mins(r.at), v: +r.height_ft })).sort((a, b) => a.x - b.x));
     const cur = o.currents ? curve(o.currents.map((r) => ({ x: mins(r.at), v: r.type === 'Flood' ? +r.speed_kt : r.type === 'Ebb' ? -r.speed_kt : 0 })).sort((a, b) => a.x - b.x)) : null;
     const sun = Object.fromEntries((o.sun || []).map((r) => [r.day, r]));
