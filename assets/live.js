@@ -43,13 +43,14 @@ window.live = (() => {
     });
   }
   async function meteo(lat, lon, tz) {
-    const q = new URLSearchParams({ latitude: lat, longitude: lon, timezone: tz, hourly: 'wind_speed_10m,wind_direction_10m,wind_gusts_10m', daily: 'sunrise,sunset', past_days: 1, forecast_days: 4, wind_speed_unit: 'kmh' });
+    const q = new URLSearchParams({ latitude: lat, longitude: lon, timezone: tz, hourly: 'wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,precipitation_probability,precipitation,weather_code,is_day', daily: 'sunrise,sunset', past_days: 1, forecast_days: 4, wind_speed_unit: 'kmh' });
     const j = await get('https://api.open-meteo.com/v1/forecast?' + q);
     const h = j.hourly;
     const wind = h.time.map((t, i) => (h.wind_speed_10m[i] == null ? null : {
       day: t.slice(0, 10), hour: +t.slice(11, 13), time: hourLbl(+t.slice(11, 13)), at: t.slice(0, 13) + ':00',
       dir_deg: h.wind_direction_10m[i] == null ? null : Math.round(h.wind_direction_10m[i]), wind_dir: compass(h.wind_direction_10m[i]),
       wind_kmh: Math.round(h.wind_speed_10m[i]), gust_kmh: h.wind_gusts_10m[i] == null ? null : Math.round(h.wind_gusts_10m[i]),
+      temp_c: h.temperature_2m?.[i] == null ? null : Math.round(h.temperature_2m[i]), pop: h.precipitation_probability?.[i] ?? null, rain_mm: h.precipitation?.[i] ?? null, code: h.weather_code?.[i] ?? null, is_day: h.is_day?.[i] ?? null,
     })).filter(Boolean);
     const sun = j.daily.time.map((d, i) => ({ day: d, sunrise: j.daily.sunrise[i].slice(11, 16), sunset: j.daily.sunset[i].slice(11, 16) }));
     return { wind, sun };

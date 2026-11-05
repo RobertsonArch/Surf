@@ -479,18 +479,22 @@ def tides_tofino():
 def open_meteo(lat, lon, key, tzname):
     q = urllib.parse.urlencode({
         "latitude": lat, "longitude": lon, "timezone": tzname,
-        "hourly": "wind_speed_10m,wind_direction_10m,wind_gusts_10m",
+        "hourly": "wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,precipitation_probability,precipitation,weather_code,is_day",
         "daily": "sunrise,sunset", "past_days": 1, "forecast_days": 4, "wind_speed_unit": "kmh"})
     j = json.loads(get("https://api.open-meteo.com/v1/forecast?" + q, key))
     h = j["hourly"]
     wind = []
-    for t, sp, d, g in zip(h["time"], h["wind_speed_10m"], h["wind_direction_10m"], h["wind_gusts_10m"]):
+    extra = lambda k, i: (h.get(k) or [None] * len(h["time"]))[i]
+    for i, (t, sp, d, g) in enumerate(zip(h["time"], h["wind_speed_10m"], h["wind_direction_10m"], h["wind_gusts_10m"])):
         if sp is None:
             continue
         hr = int(t[11:13])
         wind.append({"day": t[:10], "hour": hr, "time": hour_label(hr), "at": t[:13] + ":00",
                      "dir_deg": None if d is None else round(d), "wind_dir": compass(d),
-                     "wind_kmh": round(sp), "gust_kmh": None if g is None else round(g)})
+                     "wind_kmh": round(sp), "gust_kmh": None if g is None else round(g),
+                     "temp_c": None if extra("temperature_2m", i) is None else round(extra("temperature_2m", i)),
+                     "pop": extra("precipitation_probability", i), "rain_mm": extra("precipitation", i),
+                     "code": extra("weather_code", i), "is_day": extra("is_day", i)})
     sun = [{"day": d, "sunrise": r[11:16], "sunset": s[11:16]}
            for d, r, s in zip(j["daily"]["time"], j["daily"]["sunrise"], j["daily"]["sunset"])]
     return wind, sun
