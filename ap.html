@@ -147,9 +147,9 @@
 
   <section class="ap-card" id="wind">
     <h2>Measured wind</h2>
-    <p class="ap-note">Latest readings, with the last several hours as a line (dashed line is 10 km/h). Flagged when the wind is from the east (NE to SE) at 10 km/h or more. The airport is the best guide to wind at the spot; the harbor station is sheltered and reads light.</p>
+    <p class="ap-note">Latest readings, with the last several hours as a line (dashed line is 10 km/h). Flagged when the wind is from the east (NE to SE) at 10 km/h or more.</p>
     <div class="ap-wind" data-draw="windObs">—</div>
-    <p class="src">Check the source: <a href="https://aviationweather.gov/data/metar/?id=KCLM&hours=12" target="_blank" rel="noopener">Port Angeles airport wind (METAR) ↗</a> · <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=9444090" target="_blank" rel="noopener">Port Angeles harbor wind (NOAA) ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46088" target="_blank" rel="noopener">New Dungeness ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse Bank ↗</a></p>
+    <p class="src">Check the source: <a href="https://aviationweather.gov/data/metar/?id=KCLM&hours=12" target="_blank" rel="noopener">Port Angeles airport wind (METAR) ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46088" target="_blank" rel="noopener">New Dungeness ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse Bank ↗</a></p>
   </section>
 
   <section id="buoys">
@@ -196,7 +196,7 @@
     <p class="src">Check the source: <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46087" target="_blank" rel="noopener">Stormsurf, Neah Bay ↗</a> · <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46206" target="_blank" rel="noopener">Stormsurf, La Perouse Bank ↗</a></p>
   </section>
 
-  <p class="ap-foot">Tides: NOAA predictions, Port Angeles (9444090). Current: NOAA predictions for Angeles Pt., 2 mi NNE (PUG1639, near surface). Buoys and measured wind: NOAA NDBC live feeds, the Port Angeles airport weather report and NOAA’s Port Angeles harbor station; swell trains are split from each buoy’s wave spectrum. Wind forecast and daylight: Open-Meteo. All times are Washington (Pacific) time.</p>
+  <p class="ap-foot">Tides: NOAA predictions, Port Angeles (9444090). Current: NOAA predictions for Angeles Pt., 2 mi NNE (PUG1639, near surface). Buoys and measured wind: NOAA NDBC live feeds, the Port Angeles airport weather report; swell trains are split from each buoy’s wave spectrum. Wind forecast and daylight: Open-Meteo. All times are Washington (Pacific) time.</p>
 </div>
 
 <script>
@@ -482,7 +482,7 @@
   // Measured wind
   const isEast = (r) => r.dir_deg != null && r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10;
   const windTxt = (r) => (r.wind_kmh === 0 || r.dir_deg == null ? `calm${r.gust_kmh ? `, gusts ${r.gust_kmh}` : ''}` : `${r.wind_dir} ${r.wind_kmh} km/h${r.gust_kmh != null ? `, gusts ${r.gust_kmh}` : ''}`);
-  const STATIONS = [['Port Angeles airport', 'Fairchild airport, ~10 km east · hourly'], ['Port Angeles harbor', 'city pier, sheltered by Ediz Hook'], ['New Dungeness', 'buoy, east of Port Angeles'], ['Neah Bay', 'buoy, west end of the Strait'], ['La Perouse Bank', 'buoy, offshore']];
+  const STATIONS = [['Port Angeles airport', 'Fairchild airport, ~10 km east · hourly'], ['New Dungeness', 'buoy, east of Port Angeles'], ['Neah Bay', 'buoy, west end of the Strait'], ['La Perouse Bank', 'buoy, offshore']];
   const obsFor = (name) => rows('wind_obs').filter((r) => r.station === name).sort((a, b) => (a.at < b.at ? -1 : 1));
   const HOURS = 8;
   dash.draw('windNow', (el) => {

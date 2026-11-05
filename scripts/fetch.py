@@ -557,14 +557,6 @@ def main():
             rows += metar("KCLM", "Port Angeles airport", TZ_WA)
         except Exception as e:
             errors.append(f"wind KCLM: {e!r}")
-        try:
-            rows += harbor_wind()
-        except Exception as e:
-            errors.append(f"wind harbor: {e!r}")
-            try:
-                rows += [{**r, "station": "Port Angeles harbor"} for r in wind_obs("PTAW1", "Port Angeles harbor")]
-            except Exception:
-                pass
         write("wind_obs.json", rows)
 
     def metar(icao, name, tz):
