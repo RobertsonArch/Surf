@@ -385,7 +385,7 @@ def wave_bulletin(station, cycle):
         prev = t
         trains = []
         for cell in ln.split("|")[3:]:
-            v = cell.split()
+            v = re.findall(r"\d+(?:\.\d+)?", cell)  # cells can carry a '*' (local wind sea) marker
             if len(v) >= 3:
                 h, tp, to = float(v[0]), float(v[1]), float(v[2])
                 trains.append({"height_ft": round(h * M2FT, 1), "period_s": round(tp, 1),
@@ -405,7 +405,8 @@ def latest_cycle(station="46087"):
         try:
             wave_bulletin(station, cyc)
             return cyc
-        except Exception:
+        except Exception as e:
+            print("WARN cycle", cyc, repr(e)[:200], file=sys.stderr)
             t = t.replace(hour=hh, minute=0) - dt.timedelta(hours=6)
     raise RuntimeError("no GFS-Wave cycle found")
 
