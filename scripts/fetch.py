@@ -358,12 +358,17 @@ def history(station, seed=False):
 # ---------------------------------------------------------------- GFS-Wave buoy forecast (what Stormsurf charts)
 
 NOMADS = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod"
+AWS_GFS = "https://noaa-gfs-bdp-pds.s3.amazonaws.com"  # NOAA's open-data copy; NOMADS blocks many cloud hosts
 
 
 def wave_bulletin(station, cycle):
     """Parse NOAA's GFS-Wave point bulletin. Bulletin dir is where waves travel to; we return 'from'."""
     d, hh = cycle
-    txt = get(f"{NOMADS}/gfs.{d:%Y%m%d}/{hh:02d}/wave/station/bulls.t{hh:02d}z/gfswave.{station}.bull")
+    path = f"gfs.{d:%Y%m%d}/{hh:02d}/wave/station/bulls.t{hh:02d}z/gfswave.{station}.bull"
+    try:
+        txt = get(f"{AWS_GFS}/{path}")
+    except Exception:
+        txt = get(f"{NOMADS}/{path}")
     base = dt.datetime(d.year, d.month, d.day, hh, tzinfo=UTC)
     out = []
     prev = base
@@ -596,7 +601,7 @@ def main():
         cyc = latest_cycle()
         out = {"cycle": dt.datetime(cyc[0].year, cyc[0].month, cyc[0].day, cyc[1], tzinfo=UTC).isoformat(),
                "model": "NOAA GFS-Wave (WAVEWATCH III)", "stations": {}}
-        for st in ("46087", "46206", "46267"):
+        for st in ("46087", "46206"):  # Angeles Point (46267) is not a model output point
             try:
                 out["stations"][st] = wave_bulletin(st, cyc)
             except Exception as e:
