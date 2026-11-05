@@ -36,15 +36,22 @@ jobs:
       - name: Fetch data
         run: python scripts/fetch.py ${{ (inputs.calendar || github.event_name == 'push') && '--calendar' || '' }}
       - name: Save the buoy archive and calendar (once a day)
+        continue-on-error: true   # never let a save problem stop the site from updating
         run: |
           H=$(TZ=America/Los_Angeles date +%H); M=$(date +%M)
-          if [ "${{ github.event_name }}" != "schedule" ] || { [ "$H" = "03" ] && [ "$M" -lt 10 ]; }; then
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.calendar }}" = "true" ] || { [ "$H" = "03" ] && [ "$M" -lt 10 ]; }; then
             git config user.name "surf-bot"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -f data/history data/cal_tides.json data/cal_currents.json
-            if git diff --cached --quiet; then echo "Nothing to save"; exit 0; fi
-            git commit -m "Daily archive $(date -u +%Y-%m-%d)"
-            git pull --rebase origin main && git push
+            for i in 1 2 3; do
+              # start from whatever is on main now, keeping this run's data files on top
+              git fetch -q origin main && git reset -q --soft origin/main
+              git add -f data/history data/cal_tides.json data/cal_currents.json
+              if git diff --cached --quiet; then echo "Nothing to save"; exit 0; fi
+              git commit -q -m "Daily archive $(date -u +%Y-%m-%d)"
+              git push -q origin HEAD:main && exit 0
+              sleep 5
+            done
+            exit 1
           fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
