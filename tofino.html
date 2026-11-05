@@ -18,7 +18,7 @@
 <script src="assets/forecast.js"></script>
 </head>
 <body>
-<nav class="site-nav"><a href="./">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html" aria-current="page">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
+<nav class="site-nav"><a href="./">Home</a><a href="ap.html">Elwha</a><a href="tofino.html" aria-current="page">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Elwha swell calculator</a></nav>
 <style>
   .sg { font-family: var(--font-anthropic-sans); display: grid; gap: var(--cds-gap-lg); max-width: 72rem; margin-inline: auto; }
   .sg-eyebrow { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); letter-spacing: .06em; text-transform: uppercase; margin: 0 0 var(--cds-gap-xs); }
@@ -122,12 +122,14 @@
       <div class="sg-stat"><dt>Next tide</dt><dd data-draw="nextTide">—</dd></div>
       <div class="sg-stat"><dt>Daylight</dt><dd data-draw="daylight">—</dd></div>
     </dl>
+    <p class="src">Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.tides.gc.ca/en/stations/08615" target="_blank" rel="noopener">DFO tides, Tofino ↗</a></p>
   </section>
 
   <section class="sg-card" id="timeline">
     <h2>Today at Tofino: tide and wind</h2>
     <p class="sg-note">Tide in feet. Wind (km/h) is the hourly forecast from Open-Meteo, with arrows showing which way it blows. Shaded columns are daylight.</p>
     <div class="sg-timeline" data-draw="timeline" data-source="tofino tides sun">—</div>
+    <p class="src">Check the source: <a href="https://www.tides.gc.ca/en/stations/08615" target="_blank" rel="noopener">DFO tides, Tofino ↗</a> · <a href="https://open-meteo.com/en/docs?latitude=49.12&longitude=-125.9&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=America%2FVancouver" target="_blank" rel="noopener">Open-Meteo wind ↗</a> · <a href="https://aviationweather.gov/data/metar/?id=CYAZ&hours=12" target="_blank" rel="noopener">Tofino airport wind (METAR) ↗</a></p>
   </section>
 
   <section id="buoys">
@@ -137,7 +139,7 @@
         <div class="sg-big" data-draw="lpBig">—</div>
         <div class="sg-sub" data-draw="lpSub">—</div>
         <div class="sg-spark" data-draw="lpSpark" data-source="buoy">—</div>
-        <a class="sg-fc" href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46206" target="_blank" rel="noopener">Model forecast for this buoy (Stormsurf) ↗</a>
+        <a class="sg-fc" href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">Current data (NOAA) ↗</a>
       </div>
       <div class="sg-card sg-buoy">
         <h2>Neah Bay</h2>
@@ -146,6 +148,7 @@
         <div class="sg-swells" data-draw="neahSwells"></div>
         <div class="sg-spark" data-draw="neahSpark" data-source="buoy">—</div>
         <a class="sg-fc" href="https://www.surfline.com/buoy-report/neah-bay-6-nm-north-of-cape-flattery-wa-traffic-separation-lighted-buoy--buoy-46087/fca9de34-3ae5-11ed-8fa4-0645d0cd777f" target="_blank" rel="noopener">Buoy report (Surfline) ↗</a>
+        <a class="sg-fc" href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Current data (NOAA) ↗</a>
       </div>
     </div>
   </section>
@@ -154,12 +157,14 @@
     <h2>Buoy Overlay</h2>
     <p class="sg-note">Wave height (ft) at La Perouse Bank and Neah Bay on one scale, over the same 24 hours.</p>
     <div class="sg-overlay" data-draw="buoyOverlay" data-source="buoy">—</div>
+    <p class="src">Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse Bank ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay ↗</a></p>
   </section>
 
   <section class="sg-card" id="forecast">
     <h2>Buoy forecast</h2>
     <p class="sg-note">The 7-day model forecast for each buoy, the same NOAA forecast Stormsurf charts.</p>
     <div data-draw="buoyForecast">—</div>
+    <p class="src">Check the source: <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46206" target="_blank" rel="noopener">Stormsurf, La Perouse Bank ↗</a> · <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46087" target="_blank" rel="noopener">Stormsurf, Neah Bay ↗</a></p>
   </section>
 
   <p class="sg-foot">Tides: Fisheries and Oceans Canada predictions for Tofino (chart datum). Wind forecast and daylight: Open-Meteo. Buoys: NOAA NDBC live feeds (La Perouse Bank is an Environment Canada buoy relayed by NOAA). BC time.</p>

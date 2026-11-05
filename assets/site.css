@@ -63,3 +63,6 @@ a { color: inherit; }
 .fc-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: 8px; box-shadow: var(--cds-shadow-popover); padding: 4px 8px; font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 2; }
 .fc-tip .t { color: var(--cds-text-secondary); }
 .fc-cap { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 6px 0 0; }
+.src { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 10px 0 0; line-height: 1.7; }
+.src a { color: inherit; white-space: nowrap; }
+.src a:hover { color: var(--color-fg); }

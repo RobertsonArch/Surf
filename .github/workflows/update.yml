@@ -35,7 +35,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Fetch data
-        run: python scripts/fetch.py ${{ inputs.calendar && '--calendar' || '' }}
+        run: python scripts/fetch.py ${{ (inputs.calendar || github.event_name == 'push') && '--calendar' || '' }}
       - name: Save the buoy archive and calendar (once a day)
         run: |
           H=$(TZ=America/Los_Angeles date +%H); M=$(date +%M)

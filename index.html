@@ -31,7 +31,7 @@
 </style>
 </head>
 <body>
-<nav class="site-nav"><a href="./" aria-current="page">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
+<nav class="site-nav"><a href="./" aria-current="page">Home</a><a href="ap.html">Elwha</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Elwha swell calculator</a></nav>
 <main class="home">
   <header>
     <p class="eyebrow">Strait of Juan de Fuca · West coast of Vancouver Island</p>
@@ -42,12 +42,14 @@
     <div><p class="nm">Neah Bay buoy</p><div class="big" data-draw="b_neah">—</div><div class="sub" data-draw="s_neah"></div></div>
     <div><p class="nm">La Perouse Bank buoy</p><div class="big" data-draw="b_lp">—</div><div class="sub" data-draw="s_lp"></div></div>
     <div><p class="nm">Wind at Port Angeles</p><div class="big" data-draw="b_wind">—</div><div class="sub" data-draw="s_wind"></div></div>
+    <div><p class="nm">Wind at Tofino (Long Beach airport)</p><div class="big" data-draw="b_tof">—</div><div class="sub" data-draw="s_tof"></div></div>
+    <p class="src" style="grid-column:1/-1;margin:0">Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=46267" target="_blank" rel="noopener">Angeles Point buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=PTAW1" target="_blank" rel="noopener">Port Angeles wind ↗</a> · <a href="https://aviationweather.gov/data/metar/?id=CYAZ&hours=12" target="_blank" rel="noopener">Tofino airport wind (METAR) ↗</a></p>
   </section>
   <section class="tiles">
-    <a class="tile" href="ap.html"><h2>Angeles Point</h2><p>Today’s surf windows, tide, current and wind, live buoys with swell trains, measured wind.</p></a>
+    <a class="tile" href="ap.html"><h2>Elwha</h2><p>Today’s surf windows, tide, current and wind, live buoys with swell trains, measured wind.</p></a>
     <a class="tile" href="tofino.html"><h2>Tofino/Ucluelet</h2><p>Today’s tide and wind, La Perouse Bank and Neah Bay buoys.</p></a>
-    <a class="tile" href="calendar.html"><h2>Elwha calendars</h2><p>Flood-current windows with tide 0–6 ft in daylight, this month and the next five.</p></a>
-    <a class="tile" href="calculator.html"><h2>Swell calculator</h2><p>Will this swell work? Odds and size at the Elwha from the Neah Bay reading.</p></a>
+    <a class="tile" href="calendar.html"><h2>Elwha calendars</h2><p>Flood-current windows with tide 0–6 ft in daylight, through the end of 2027.</p></a>
+    <a class="tile" href="calculator.html"><h2>Elwha swell calculator</h2><p>Will this swell work? Odds and size at the Elwha from the Neah Bay reading.</p></a>
   </section>
 </main>
 <p class="site-updated" id="updated"></p>
@@ -70,7 +72,11 @@
     el.replaceChildren(`${r.gust_kmh != null ? `gusts ${r.gust_kmh} · ` : ''}${clock(r.at)} WA`);
     if (r.dir_deg != null && r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10) { const f = document.createElement('span'); f.className = 'flag'; f.textContent = ' · East 10+'; el.append(f); }
   });
-  dash.load({ ap: 'data/ap_buoy.json', neah: 'data/neah_buoy.json', lp: 'data/lp_buoy.json', wind: 'data/wind_obs.json' }, ['buoys', 'wind_obs']);
+  const tof = () => (ok('tofobs') ? dash.data('tofobs').data.slice(-1)[0] : null);
+  const bcClock = (iso) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/Vancouver', hour: 'numeric', minute: '2-digit' });
+  dash.draw('b_tof', (el) => { const r = tof(); el.textContent = !r ? '—' : r.wind_kmh === 0 ? 'Calm' : `${r.wind_dir ?? ''} ${r.wind_kmh} km/h`.trim(); });
+  dash.draw('s_tof', (el) => { const r = tof(); el.textContent = r ? `${r.gust_kmh != null ? `gusts ${r.gust_kmh} · ` : ''}${bcClock(r.utc)} BC` : ''; });
+  dash.load({ tofobs: 'data/tofino_obs.json', ap: 'data/ap_buoy.json', neah: 'data/neah_buoy.json', lp: 'data/lp_buoy.json', wind: 'data/wind_obs.json' }, ['buoys', 'wind_obs', 'tofino_obs']);
 })();
 </script>
 </body>

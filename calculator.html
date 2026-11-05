@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Elwha – Will this swell work?</title>
+<title>Elwha Swell Calculator</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
@@ -56,15 +56,16 @@ td.fcst{font-style:italic;opacity:.8}
 td.now{outline:2px solid var(--fg);outline-offset:-2px}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted)}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.src{font-size:.8rem;color:var(--muted);margin:0}.src a{color:inherit}
 .foot{font-size:.8rem;color:var(--muted);max-width:80ch;margin:0}
 </style>
 </head>
 <body>
-<nav class="site-nav"><a href="./">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html" aria-current="page">Swell calculator</a></nav>
+<nav class="site-nav"><a href="./">Home</a><a href="ap.html">Elwha</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html" aria-current="page">Elwha swell calculator</a></nav>
 <div class="wrap">
   <header>
     <p class="eyebrow">Forecast check · Neah Bay → Angeles Point · Washington time</p>
-    <h1>Will this swell work?</h1>
+    <h1>Elwha Swell Calculator</h1>
     <p class="sub">Opens on today with the latest Neah Bay reading filled in. Pick another day or type a swell forecast; the page loads that day’s tide, current and wind, then shows which hours fit the spot and the odds for each, based on every similar swell since 2020.</p>
   </header>
 
@@ -97,6 +98,7 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
     </div>
   </section>
 
+  <p class="src">Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46267" target="_blank" rel="noopener">Angeles Point buoy ↗</a> · <a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=9444090" target="_blank" rel="noopener">NOAA tides, Port Angeles ↗</a> · <a href="https://tidesandcurrents.noaa.gov/noaacurrents/predictions.html?id=PUG1639_16" target="_blank" rel="noopener">NOAA current, Angeles Pt. ↗</a> · <a href="https://forecast.weather.gov/MapClick.php?lat=48.146&lon=-123.565" target="_blank" rel="noopener">NWS forecast ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=PTAW1" target="_blank" rel="noopener">Port Angeles measured wind ↗</a> · <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46087" target="_blank" rel="noopener">Stormsurf, Neah Bay forecast ↗</a></p>
   <p class="foot">Tide is NOAA’s prediction for Port Angeles (9444090). Current is NOAA’s tidal current prediction for Angeles Point, 2 mi NNE (PUG1639), shown for reference only and not used in the odds. Wind is the National Weather Service hourly forecast for Port Angeles (about 6 days ahead); for today and past dates it is the observed wind at the Port Angeles station. Light is first to last light at Port Angeles. The odds compare your swell with every Neah Bay hour since 2020 from 230–319° and 1.5 m+, and how often Angeles Point then read 1.0 m+ at 10 s+, weighting the closest height (±0.5 m), period (±2 s) and direction (±7°). The predicted size is the average height Angeles Point reached in those similar swells, in the hours around the swell’s arrival. For today and future dates the swell shown is treated as running all day, and the odds assume it holds. For a past date the swell is filled from the Neah Bay buoy (NDBC 46087): each hour uses the Neah Bay reading from 2–3 hours earlier, matched to the swell’s travel time, and the Angeles Point buoy (46267) row shows what was actually measured. Buoy history comes from this site’s hourly archive of NOAA readings.</p>
 </div>
 

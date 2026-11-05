@@ -556,6 +556,28 @@ def main():
                 errors.append(f"wind {st}: {e!r}")
         write("wind_obs.json", rows)
 
+    def tofino_obs():
+        # Tofino / Long Beach airport (CYAZ) observations, from the aviation weather service
+        j = json.loads(get("https://aviationweather.gov/api/data/metar?ids=CYAZ&format=json&hours=24"))
+        rows = []
+        for m in j:
+            t = m.get("obsTime") or m.get("reportTime")
+            if isinstance(t, (int, float)):
+                t = dt.datetime.fromtimestamp(t, UTC)
+            else:
+                t = dt.datetime.fromisoformat(str(t).replace("Z", "+00:00"))
+            sp = m.get("wspd")
+            if sp is None:
+                continue
+            d = m.get("wdir")
+            d = None if d in (None, "VRB") or sp == 0 else float(d)
+            g = m.get("wgst")
+            rows.append({"station": "Tofino Airport", "at": at_str(t, TZ), "utc": t.isoformat(), "dir_deg": d,
+                         "wind_dir": compass(d) if d is not None else ("VRB" if m.get("wdir") == "VRB" else None),
+                         "wind_kmh": round(sp * 1.852), "gust_kmh": None if g is None else round(g * 1.852)})
+        rows.sort(key=lambda r: r["utc"])
+        write("tofino_obs.json", rows)
+
     def ap_tides():
         write("tides.json", tides_ap(TODAY_WA - dt.timedelta(days=1), TODAY_WA + dt.timedelta(days=2)))
 
@@ -580,7 +602,8 @@ def main():
         start = TODAY_WA.replace(day=1)
         months = []
         y, m = start.year, start.month
-        for _ in range(7):
+        n = max(7, (2027 - y) * 12 + (12 - m) + 2)  # through December 2027, at least 6 months ahead
+        for _ in range(n):
             months.append((y, m))
             y, m = (y + 1, 1) if m == 12 else (y, m + 1)
         tides, cur = [], []
@@ -619,6 +642,7 @@ def main():
     job("wind", ap_wind)
     job("tofino_wind", tofino_wind)
     job("tofino_tides", tofino_tides)
+    job("tofino_obs", tofino_obs)
     hour = NOW.astimezone(TZ_WA).hour
     daily = hour == 3 and NOW.minute < 10
     if "--calendar" in sys.argv or daily or not os.path.exists(os.path.join(DATA, "cal_tides.json")):
