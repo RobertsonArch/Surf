@@ -28,26 +28,35 @@
   .tile h2 { font-size: var(--cds-font-size-heading); margin: 0 0 4px; font-weight: 600; }
   .tile p { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
   .flag { color: var(--color-bad); font-weight: 600; }
+  .now .grp { grid-column: 1 / -1; margin: 0; font-size: var(--cds-font-size-caption); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-fg-muted); }
+  .now .src { grid-column: 1 / -1; margin: 0; }
 </style>
 </head>
 <body>
-<nav class="site-nav"><a href="./" aria-current="page">Home</a><a href="ap.html">Elwha</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Elwha swell calculator</a></nav>
+<nav class="site-nav"><a href="./" aria-current="page">Home</a><a href="tofino.html">Tofino/Ucluelet</a><a href="ap.html">Elwha</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Elwha swell calculator</a></nav>
 <main class="home">
   <header>
     <p class="eyebrow">Strait of Juan de Fuca · West coast of Vancouver Island</p>
     <h1>Surf Day at a Glance</h1>
   </header>
   <section class="now" aria-label="Buoys now">
+    <h2 class="grp">Buoys now</h2>
     <div><p class="nm">Angeles Point buoy</p><div class="big" data-draw="b_ap">—</div><div class="sub" data-draw="s_ap"></div></div>
     <div><p class="nm">Neah Bay buoy</p><div class="big" data-draw="b_neah">—</div><div class="sub" data-draw="s_neah"></div></div>
     <div><p class="nm">La Perouse Bank buoy</p><div class="big" data-draw="b_lp">—</div><div class="sub" data-draw="s_lp"></div></div>
-    <div><p class="nm">Wind at Port Angeles</p><div class="big" data-draw="b_wind">—</div><div class="sub" data-draw="s_wind"></div></div>
-    <div><p class="nm">Wind at Tofino (Long Beach airport)</p><div class="big" data-draw="b_tof">—</div><div class="sub" data-draw="s_tof"></div></div>
-    <p class="src" style="grid-column:1/-1;margin:0">Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=46267" target="_blank" rel="noopener">Angeles Point buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=PTAW1" target="_blank" rel="noopener">Port Angeles wind ↗</a> · <a href="https://aviationweather.gov/data/metar/?id=CYAZ&hours=12" target="_blank" rel="noopener">Tofino airport wind (METAR) ↗</a></p>
+    <p class="src">Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=46267" target="_blank" rel="noopener">Angeles Point buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse buoy ↗</a></p>
+  </section>
+  <section class="now" aria-label="Wind now">
+    <h2 class="grp">Wind now</h2>
+    <div><p class="nm">Port Angeles (Ediz Hook)</p><div class="big" data-draw="w_pa">—</div><div class="sub" data-draw="ws_pa"></div></div>
+    <div><p class="nm">Neah Bay buoy</p><div class="big" data-draw="w_neah">—</div><div class="sub" data-draw="ws_neah"></div></div>
+    <div><p class="nm">La Perouse Bank buoy</p><div class="big" data-draw="w_lp">—</div><div class="sub" data-draw="ws_lp"></div></div>
+    <div><p class="nm">Tofino (Long Beach airport)</p><div class="big" data-draw="w_tof">—</div><div class="sub" data-draw="ws_tof"></div></div>
+    <p class="src">East 10+ flags east wind (NE to SE) of 10 km/h or more in the Strait. Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=PTAW1" target="_blank" rel="noopener">Port Angeles ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse buoy ↗</a> · <a href="https://aviationweather.gov/data/metar/?id=CYAZ&hours=12" target="_blank" rel="noopener">Tofino airport (METAR) ↗</a></p>
   </section>
   <section class="tiles">
-    <a class="tile" href="ap.html"><h2>Elwha</h2><p>Today’s surf windows, tide, current and wind, live buoys with swell trains, measured wind.</p></a>
     <a class="tile" href="tofino.html"><h2>Tofino/Ucluelet</h2><p>Today’s tide and wind, La Perouse Bank and Neah Bay buoys.</p></a>
+    <a class="tile" href="ap.html"><h2>Elwha</h2><p>Today’s surf windows, tide, current and wind, live buoys with swell trains, measured wind.</p></a>
     <a class="tile" href="calendar.html"><h2>Elwha calendars</h2><p>Flood-current windows with tide 0–6 ft in daylight, through the end of 2027.</p></a>
     <a class="tile" href="calculator.html"><h2>Elwha swell calculator</h2><p>Will this swell work? Odds and size at the Elwha from the Neah Bay reading.</p></a>
   </section>
@@ -64,18 +73,22 @@
   dash.draw('b_neah', (el) => { el.textContent = big(last('neah')); });
   dash.draw('s_neah', (el) => { const r = last('neah'); el.textContent = r ? `${r.direction ?? ''} ${r.dir_type ?? ''} · ${clock(r.at)} WA` : ''; });
   dash.draw('b_lp', (el) => { el.textContent = big(last('lp')); });
-  dash.draw('s_lp', (el) => { const r = last('lp'); el.textContent = r ? `wind ${r.wind_kmh ?? '—'} km/h · ${clock(r.at)} WA` : ''; });
-  const pa = () => (ok('wind') ? dash.data('wind').data.filter((r) => r.station === 'Port Angeles').slice(-1)[0] : null);
-  dash.draw('b_wind', (el) => { const r = pa(); el.textContent = !r ? '—' : r.wind_kmh === 0 || r.dir_deg == null ? 'Calm' : `${r.wind_dir} ${r.wind_kmh} km/h`; });
-  dash.draw('s_wind', (el) => {
-    const r = pa(); if (!r) return (el.textContent = '');
-    el.replaceChildren(`${r.gust_kmh != null ? `gusts ${r.gust_kmh} · ` : ''}${clock(r.at)} WA`);
-    if (r.dir_deg != null && r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10) { const f = document.createElement('span'); f.className = 'flag'; f.textContent = ' · East 10+'; el.append(f); }
-  });
+  dash.draw('s_lp', (el) => { const r = last('lp'); el.textContent = r ? `${clock(r.at)} WA` : ''; });
+  const obs = (name) => (ok('wind') ? dash.data('wind').data.filter((r) => r.station === name).slice(-1)[0] : null);
   const tof = () => (ok('tofobs') ? dash.data('tofobs').data.slice(-1)[0] : null);
   const bcClock = (iso) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/Vancouver', hour: 'numeric', minute: '2-digit' });
-  dash.draw('b_tof', (el) => { const r = tof(); el.textContent = !r ? '—' : r.wind_kmh === 0 ? 'Calm' : `${r.wind_dir ?? ''} ${r.wind_kmh} km/h`.trim(); });
-  dash.draw('s_tof', (el) => { const r = tof(); el.textContent = r ? `${r.gust_kmh != null ? `gusts ${r.gust_kmh} · ` : ''}${bcClock(r.utc)} BC` : ''; });
+  const windBig = (r) => (!r ? '—' : r.wind_kmh === 0 || r.dir_deg == null ? (r.wind_kmh ? `${r.wind_dir ?? 'VRB'} ${r.wind_kmh} km/h` : 'Calm') : `${r.wind_dir} ${r.wind_kmh} km/h`);
+  const windSub = (el, r, when, strait) => {
+    if (!r) return (el.textContent = '');
+    el.replaceChildren(`${r.gust_kmh != null ? `gusts ${r.gust_kmh} · ` : ''}${when}`);
+    if (strait && r.dir_deg != null && r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10) { const f = document.createElement('span'); f.className = 'flag'; f.textContent = ' · East 10+'; el.append(f); }
+  };
+  for (const [k, name, strait] of [['pa', 'Port Angeles', true], ['neah', 'Neah Bay', true], ['lp', 'La Perouse Bank', false]]) {
+    dash.draw('w_' + k, (el) => { el.textContent = windBig(obs(name)); });
+    dash.draw('ws_' + k, (el) => { const r = obs(name); windSub(el, r, r ? `${clock(r.at)} WA` : '', strait); });
+  }
+  dash.draw('w_tof', (el) => { el.textContent = windBig(tof()); });
+  dash.draw('ws_tof', (el) => { const r = tof(); windSub(el, r, r ? `${bcClock(r.utc)} BC` : '', false); });
   dash.load({ tofobs: 'data/tofino_obs.json', ap: 'data/ap_buoy.json', neah: 'data/neah_buoy.json', lp: 'data/lp_buoy.json', wind: 'data/wind_obs.json' }, ['buoys', 'wind_obs', 'tofino_obs']);
 })();
 </script>
