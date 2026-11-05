@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elwha Calendars</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Surf">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Source+Serif+4:opsz@8..60&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/d3.min.js"></script>
+<script src="assets/dash.js"></script>
+<style>
+  .cw { max-width: 72rem; margin: 0 auto; display: grid; gap: 14px; }
+  .cw h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 32px; line-height: 1.1; margin: 0; }
+  .eyebrow { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 4px; }
+  .note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { font-size: var(--cds-font-size-caption); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-panel); }
+  .months { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .months button { flex: none; font: inherit; font-size: var(--cds-font-size-caption); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg-muted); cursor: pointer; }
+  .months button[aria-pressed=true] { color: var(--color-fg); border-color: var(--color-fg); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid; }
+  .grid-wrap { overflow-x: auto; }
+  .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; min-width: 700px; }
+  .hdr { text-align: center; font-size: 11px; font-weight: 600; color: var(--color-fg-muted); text-transform: uppercase; padding: 2px 0; }
+  .day { display: flex; flex-direction: column; border: 1px solid var(--color-border-line); background: var(--color-panel); border-radius: 9px; padding: 6px 7px 4px; min-height: 96px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+  .day.empty { visibility: hidden; }
+  .day.past { opacity: .5; }
+  .day.today { outline: 2px solid var(--color-fg); outline-offset: -1px; }
+  .day .num { font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; }
+  .day .w { font-size: 10px; line-height: 1.35; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .day .nw { font-size: 10px; color: var(--color-fg-muted); margin-top: 2px; }
+  .day .wx { font-size: 9.5px; font-weight: 600; margin-top: 2px; }
+  .day .wx.bad { color: var(--color-bad); }
+  .day .wx.ok { color: var(--color-ok); }
+  .day svg { margin-top: auto; display: block; width: 100%; height: 34px; }
+  .prime { --c: #12805c; background: color-mix(in srgb, #2ea37a 16%, var(--color-panel)); border-color: color-mix(in srgb, #2ea37a 55%, var(--color-panel)); }
+  .good { background: color-mix(in srgb, #4b8fd6 14%, var(--color-panel)); border-color: color-mix(in srgb, #4b8fd6 50%, var(--color-panel)); }
+  .weak { background: color-mix(in srgb, #e39a2d 13%, var(--color-panel)); border-color: color-mix(in srgb, #e39a2d 50%, var(--color-panel)); }
+  .detail { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 14px 16px; display: none; }
+  .detail.open { display: block; }
+  .detail h2 { font-size: var(--cds-font-size-heading); margin: 0; }
+  .dhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .dhead button { font: inherit; font-size: 20px; line-height: 1; background: none; border: 0; color: var(--color-fg-muted); cursor: pointer; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 8px; margin-top: 10px; }
+  .card { background: var(--color-bg); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+  .card .l { font-size: 11px; color: var(--color-fg-muted); }
+  .card .v { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .big svg { display: block; width: 100%; height: auto; }
+  .big text { font-size: 10px; fill: var(--color-fg-muted); font-family: var(--font-anthropic-sans); }
+  .calc-link { font-size: var(--cds-font-size-caption); }
+</style>
+</head>
+<body>
+<nav class="site-nav"><a href="./">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html" aria-current="page">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
+<main class="cw">
+  <header>
+    <p class="eyebrow">Elwha surf windows · Washington time</p>
+    <h1 id="title">Elwha Calendar</h1>
+  </header>
+  <div class="pills"><span class="pill">↗ Flood current</span><span class="pill">↕ Tide 0–6 ft</span><span class="pill">☀ Daylight</span><span class="pill">≈ Wind flagged for the next few days</span></div>
+  <div class="months" id="months"></div>
+  <div class="legend">
+    <span><i style="background:color-mix(in srgb,#2ea37a 16%,transparent);border-color:#2ea37a"></i>Prime: 75+ min, flood averaging 1.2+ kt</span>
+    <span><i style="background:color-mix(in srgb,#4b8fd6 14%,transparent);border-color:#4b8fd6"></i>Good: 60+ min, flood averaging 0.7+ kt</span>
+    <span><i style="background:color-mix(in srgb,#e39a2d 13%,transparent);border-color:#e39a2d"></i>Weak: short or light flood</span>
+    <span><i style="border-color:var(--color-border-line)"></i>No window</span>
+  </div>
+  <p class="note">Mini charts run 5 AM–9 PM: blue tide line where it’s 0–6 ft, orange fill is the flood current, green bar is the window. “E wind” means the forecast has east wind of 10+ km/h during that day’s window. Tap a day for details.</p>
+  <section class="detail" id="detail" aria-live="polite"></section>
+  <div class="grid-wrap"><div class="grid" id="grid"></div></div>
+  <p class="note">Tides: NOAA predictions for Port Angeles (9444090, MLLW). Current: NOAA predictions for Angeles Pt., 2 mi NNE (PUG1639, near surface). Tide and current between the predicted turns are drawn with a smooth (cosine) curve, so window edges are good to about ±15 min. Daylight is sunrise to sunset at the Elwha mouth. Wind: Open-Meteo hourly forecast.</p>
+</main>
+<p class="site-updated" id="updated"></p>
+<script>
+(() => {
+  const TZ = 'America/Los_Angeles';
+  const LAT = 48.146, LON = -123.565;
+  const ok = (id) => dash.data(id).status === 'ok';
+  const rows = (id) => (ok(id) ? dash.data(id).data : []);
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const localDay = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+  const dayNum = (s) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 864e5; // days since epoch
+  const absMin = (at) => dayNum(at) * 1440 + +at.slice(11, 13) * 60 + +at.slice(14, 16);
+  const clock = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${(h + 11) % 12 + 1}:${String(mm).padStart(2, '0')}${h < 12 ? 'am' : 'pm'}`; };
+  const cosInterp = (pts) => (t) => {
+    let lo = 0, hi = pts.length - 1;
+    if (!pts.length || t < pts[0].x || t > pts[hi].x) return null;
+    while (hi - lo > 1) { const md = (lo + hi) >> 1; if (pts[md].x <= t) lo = md; else hi = md; }
+    const a = pts[lo], b = pts[hi], f = b.x === a.x ? 0 : (t - a.x) / (b.x - a.x);
+    return a.v + (b.v - a.v) * (1 - Math.cos(Math.PI * f)) / 2;
+  };
+
+  // Sunrise / sunset (NOAA solar equations), minutes after local midnight.
+  const tzOffsetMin = (ds) => { // offset of TZ from UTC at local noon of day ds
+    const d = new Date(`${ds}T12:00:00Z`);
+    const p = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour12: false, hour: '2-digit', minute: '2-digit' }).formatToParts(d);
+    const h = +p.find((x) => x.type === 'hour').value % 24, mi = +p.find((x) => x.type === 'minute').value;
+    return (h * 60 + mi) - 720;
+  };
+  const sunTimes = (ds) => {
+    const rad = Math.PI / 180;
+    const jd = dayNum(ds) + 2440587.5 + 0.5;
+    const n = jd - 2451545.0 + 0.0008;
+    const Js = n - LON / 360;
+    const M = (357.5291 + 0.98560028 * Js) % 360;
+    const C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+    const L = (M + C + 180 + 102.9372) % 360;
+    const Jt = 2451545.0 + Js + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * L * rad);
+    const dec = Math.asin(Math.sin(L * rad) * Math.sin(23.4397 * rad));
+    const cw = (Math.sin(-0.833 * rad) - Math.sin(LAT * rad) * Math.sin(dec)) / (Math.cos(LAT * rad) * Math.cos(dec));
+    const w = Math.acos(Math.max(-1, Math.min(1, cw))) / rad;
+    const toLocal = (j) => { const utcMin = ((j - 2440587.5) * 1440) - dayNum(ds) * 1440; return utcMin + tzOffsetMin(ds); };
+    return { rise: toLocal(Jt - w / 360), set: toLocal(Jt + w / 360) };
+  };
+  const moon = (ds) => {
+    const syn = 29.530588853, ref = Date.UTC(2000, 0, 6, 18, 14);
+    const age = (((Date.UTC(+ds.slice(0, 4), +ds.slice(5, 7) - 1, +ds.slice(8, 10), 20) - ref) / 864e5) % syn + syn) % syn;
+    const i = Math.floor(age / syn * 8 + 0.5) % 8;
+    return { icon: ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'][i], name: ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'][i], illum: Math.round((1 - Math.cos(2 * Math.PI * age / syn)) / 2 * 100) };
+  };
+
+  let model = null;
+  const build = () => {
+    const T = rows('cal_tides').map((r) => ({ x: absMin(r.at), v: +r.height_ft, r })).sort((a, b) => a.x - b.x);
+    const C = rows('cal_currents').map((r) => ({ x: absMin(r.at), v: r.type === 'Flood' ? +r.speed_kt : r.type === 'Ebb' ? -r.speed_kt : 0, r })).sort((a, b) => a.x - b.x);
+    return { T, C, tide: cosInterp(T), cur: cosInterp(C) };
+  };
+  const STEP = 10, D0 = 300, D1 = 1260;
+  const analyse = (ds) => {
+    const { tide, cur, T, C } = model;
+    const base = dayNum(ds) * 1440;
+    const sun = sunTimes(ds);
+    const samples = [];
+    for (let m = D0; m <= D1; m += STEP) {
+      const h = tide(base + m), v = cur(base + m);
+      const day = m >= sun.rise && m <= sun.set;
+      const inT = h != null && h >= 0 && h <= 6;
+      const fl = v != null && v > 0.05;
+      samples.push({ m, h, v, day, inT, fl, win: day && inT && fl });
+    }
+    const wins = [];
+    let s = null;
+    samples.forEach((p, i) => {
+      if (p.win && s === null) s = i;
+      if ((!p.win || i === samples.length - 1) && s !== null) {
+        const e = p.win ? i : i - 1;
+        const seg = samples.slice(s, e + 1);
+        const dur = (e - s) * STEP;
+        if (dur >= 10) wins.push({ start: samples[s].m, end: samples[e].m, dur, avg: d3.mean(seg, (q) => q.v), peak: d3.max(seg, (q) => q.v), h0: seg[0].h, h1: seg[seg.length - 1].h, v0: seg[0].v, v1: seg[seg.length - 1].v });
+        s = null;
+      }
+    });
+    const grade = (w) => (w.dur >= 75 && w.avg >= 1.2 ? 3 : w.dur >= 60 && w.avg >= 0.7 ? 2 : w.dur >= 20 ? 1 : 0);
+    wins.forEach((w) => { w.g = grade(w); });
+    wins.sort((a, b) => b.g - a.g || b.dur - a.dur);
+    const cls = ['none', 'weak', 'good', 'prime'][wins.length ? wins[0].g : 0];
+    const turns = T.filter((p) => p.r.day === ds);
+    const curs = C.filter((p) => p.r.day === ds && p.r.type !== 'Slack');
+    // wind during the main window, when the forecast covers it
+    let wx = null;
+    if (wins.length) {
+      const w = wins[0];
+      const hrs = rows('wind').filter((r) => r.day === ds && r.hour * 60 + 59 >= w.start && r.hour * 60 <= w.end);
+      if (hrs.length) {
+        const east = hrs.filter((r) => r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10);
+        wx = { east: east.length > 0, max: d3.max(hrs, (r) => r.wind_kmh), hrs };
+      }
+    }
+    return { ds, sun, samples, wins, cls, turns, curs, wx };
+  };
+
+  const mini = (a, big) => {
+    const W = big ? 640 : 150, H = big ? 220 : 34;
+    const m = big ? { l: 40, r: 40, t: 8, b: 40 } : { l: 0, r: 0, t: 1, b: 6 };
+    const svg = d3.create('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('preserveAspectRatio', big ? 'xMidYMid meet' : 'none').attr('aria-hidden', big ? null : 'true');
+    if (big) svg.attr('role', 'img').attr('aria-label', 'Tide, flood current and window through the day');
+    const x = d3.scaleLinear([D0, D1], [m.l, W - m.r]);
+    const yH = d3.scaleLinear([-3, 9], [H - m.b, m.t]);
+    const yV = d3.scaleLinear([-3.5, 3.5], [H - m.b, m.t]);
+    const ns = (sel) => sel.attr('vector-effect', 'non-scaling-stroke');
+    svg.append('rect').attr('x', x(Math.max(D0, a.sun.rise))).attr('width', x(Math.min(D1, a.sun.set)) - x(Math.max(D0, a.sun.rise))).attr('y', m.t).attr('height', H - m.b - m.t).style('fill', 'var(--color-bg)').attr('opacity', 0.9);
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', yH(6)).attr('height', yH(0) - yH(6)).style('fill', '#4b8fd6').attr('opacity', 0.1);
+    [0, 6].forEach((v) => ns(svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', yH(v)).attr('y2', yH(v)).style('stroke', '#4b8fd6').attr('stroke-opacity', 0.45).attr('stroke-dasharray', '3 2').attr('stroke-width', big ? 1 : 0.6)));
+    const S = a.samples.filter((p) => p.v != null);
+    svg.append('path').datum(S).attr('d', d3.area((p) => x(p.m), yV(0), (p) => yV(Math.max(0, p.v)))).style('fill', '#e39a2d').attr('opacity', 0.3);
+    ns(svg.append('path').datum(S).attr('d', d3.line((p) => x(p.m), (p) => yV(p.v))).attr('fill', 'none').style('stroke', '#d9821e').attr('stroke-width', big ? 1.6 : 1));
+    const H2 = a.samples.filter((p) => p.h != null);
+    ns(svg.append('path').datum(H2).attr('d', d3.line((p) => x(p.m), (p) => yH(p.h))).attr('fill', 'none').style('stroke', 'var(--cds-chart-muted)').attr('stroke-width', big ? 2 : 1.4));
+    ns(svg.append('path').datum(H2).attr('d', d3.line((p) => x(p.m), (p) => yH(p.h)).defined((p) => p.inT)).attr('fill', 'none').style('stroke', '#3d7fca').attr('stroke-width', big ? 2.4 : 1.6));
+    a.wins.forEach((w) => svg.append('rect').attr('x', x(w.start)).attr('width', Math.max(2, x(w.end) - x(w.start))).attr('y', H - m.b + (big ? 4 : 1)).attr('height', big ? 8 : 4).attr('rx', 2).style('fill', ['#bbb', '#e39a2d', '#4b8fd6', '#2ea37a'][w.g]));
+    if (big) {
+      for (let h = 6; h <= 20; h += 2) { svg.append('text').attr('x', x(h * 60)).attr('y', H - 10).attr('text-anchor', 'middle').text(`${(h % 12) || 12}${h < 12 ? 'a' : 'p'}`); }
+      [-2, 0, 2, 4, 6, 8].forEach((v) => svg.append('text').attr('x', m.l - 6).attr('y', yH(v)).attr('dy', '0.32em').attr('text-anchor', 'end').text(`${v} ft`));
+      [-3, -2, -1, 0, 1, 2, 3].forEach((v) => svg.append('text').attr('x', W - m.r + 6).attr('y', yV(v)).attr('dy', '0.32em').style('fill', '#c47a22').text(`${v > 0 ? '+' : ''}${v} kt`));
+      if (a.wx) a.wx.hrs.forEach((r) => svg.append('text').attr('x', x(r.hour * 60 + 30)).attr('y', m.t + 10).attr('text-anchor', 'middle').style('fill', r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10 ? 'var(--color-bad)' : 'var(--color-fg-muted)').text(`${r.wind_dir} ${r.wind_kmh}`));
+    }
+    return svg.node();
+  };
+
+  const fmtWin = (w) => `${clock(w.start)}–${clock(w.end)}`;
+  const NAMES = { prime: 'Prime', good: 'Good', weak: 'Weak / short', none: 'No window' };
+  const showDetail = (a) => {
+    const el = document.getElementById('detail');
+    const [y, mo, d] = a.ds.split('-').map(Number);
+    const mn = moon(a.ds);
+    const card = (l, v) => { const c = document.createElement('div'); c.className = 'card'; c.innerHTML = '<div class="l"></div><div class="v"></div>'; c.firstChild.textContent = l; c.lastChild.textContent = v; return c; };
+    const head = document.createElement('div'); head.className = 'dhead';
+    const h2 = document.createElement('h2'); h2.textContent = `${MONTHS[mo - 1]} ${d}: ${NAMES[a.cls]}`;
+    const x = document.createElement('button'); x.textContent = '×'; x.setAttribute('aria-label', 'Close'); x.onclick = () => el.classList.remove('open');
+    head.append(h2, x);
+    const big = document.createElement('div'); big.className = 'big'; big.append(mini(a, true));
+    const cards = document.createElement('div'); cards.className = 'cards';
+    if (a.wins.length) a.wins.slice(0, 2).forEach((w, i) => {
+      cards.append(card(i ? 'Second window' : 'Window', `${fmtWin(w)} (${w.dur} min)`));
+      cards.append(card(i ? 'Tide / flood' : 'Tide in window', `${w.h0.toFixed(1)} → ${w.h1.toFixed(1)} ft · flood ${w.v0.toFixed(1)} → ${w.v1.toFixed(1)} kt`));
+    });
+    else cards.append(card('Window', 'None'));
+    cards.append(card('Tide turns', a.turns.map((p) => `${p.r.type[0]} ${p.r.height_ft} ft ${p.r.time}`).join(' · ') || '—'));
+    cards.append(card('Max current', a.curs.map((p) => `${p.r.type} ${p.r.speed_kt} kt ${p.r.time}`).join(' · ') || '—'));
+    cards.append(card('Daylight', `${clock(a.sun.rise)} – ${clock(a.sun.set)}`));
+    cards.append(card('Moon', `${mn.icon} ${mn.name} (~${mn.illum}%)`));
+    if (a.wx) cards.append(card('Forecast wind in window', a.wx.east ? `East 10+ km/h (max ${a.wx.max})` : `OK, max ${a.wx.max} km/h`));
+    const lk = document.createElement('a'); lk.className = 'calc-link'; lk.href = `calculator.html?date=${a.ds}${a.wins.length ? `&time=${String(Math.floor(a.wins[0].start / 60)).padStart(2, '0')}:${String(a.wins[0].start % 60).padStart(2, '0')}` : ''}`; lk.textContent = 'Open in the swell calculator →';
+    const lp = document.createElement('p'); lp.style.margin = '10px 0 0'; lp.append(lk);
+    el.replaceChildren(head, big, cards, lp);
+    el.classList.add('open');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
+  let month = null;
+  const render = () => {
+    if (!ok('cal_tides') || !ok('cal_currents')) return;
+    model = build();
+    const days = [...new Set(model.T.map((p) => p.r.day))].sort();
+    const ms = [...new Set(days.map((d) => d.slice(0, 7)))].filter((m) => days.filter((d) => d.startsWith(m)).length > 3);
+    const today = localDay();
+    if (!month || !ms.includes(month)) month = ms.includes(today.slice(0, 7)) ? today.slice(0, 7) : ms[0];
+    const mb = document.getElementById('months');
+    mb.replaceChildren(...ms.map((m) => { const b = document.createElement('button'); b.textContent = `${MONTHS[+m.slice(5) - 1].slice(0, 3)} ${m.slice(0, 4)}`; b.setAttribute('aria-pressed', m === month); b.onclick = () => { month = m; document.getElementById('detail').classList.remove('open'); render(); }; return b; }));
+    const [y, mo] = month.split('-').map(Number);
+    document.getElementById('title').textContent = `Elwha Calendar — ${MONTHS[mo - 1]} ${y}`;
+    const grid = document.getElementById('grid');
+    grid.replaceChildren(...['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => Object.assign(document.createElement('div'), { className: 'hdr', textContent: d })));
+    const first = new Date(Date.UTC(y, mo - 1, 1)).getUTCDay();
+    for (let i = 0; i < first; i++) grid.append(Object.assign(document.createElement('div'), { className: 'day empty' }));
+    const nd = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+    for (let d = 1; d <= nd; d++) {
+      const ds = `${month}-${String(d).padStart(2, '0')}`;
+      const a = analyse(ds);
+      const b = document.createElement('button');
+      b.className = `day ${a.cls}${ds < today ? ' past' : ''}${ds === today ? ' today' : ''}`;
+      const num = document.createElement('div'); num.className = 'num'; num.textContent = d;
+      const mn = moon(ds); const ms2 = document.createElement('span'); ms2.textContent = mn.icon; ms2.title = mn.name; num.append(ms2);
+      b.append(num);
+      if (a.wins.length) a.wins.slice(0, 2).forEach((w, i) => { const e = document.createElement('div'); e.className = 'w'; e.textContent = fmtWin(w); if (i) e.style.opacity = '.75'; b.append(e); });
+      else b.append(Object.assign(document.createElement('div'), { className: 'nw', textContent: 'No window' }));
+      if (a.wx) b.append(Object.assign(document.createElement('div'), { className: `wx ${a.wx.east ? 'bad' : 'ok'}`, textContent: a.wx.east ? 'E wind' : `Wind ok (${a.wx.max})` }));
+      b.append(mini(a, false));
+      b.setAttribute('aria-label', `${MONTHS[mo - 1]} ${d}: ${NAMES[a.cls]}${a.wins.length ? ', ' + fmtWin(a.wins[0]) : ''}`);
+      b.onclick = () => showDetail(a);
+      grid.append(b);
+    }
+  };
+  dash.draw('calendar', render);
+  document.body.setAttribute('data-draw', 'calendar');
+  dash.load({ cal_tides: 'data/cal_tides.json', cal_currents: 'data/cal_currents.json', wind: 'data/wind.json' }, ['calendar', 'wind']);
+})();
+</script>
+</body>
+</html>

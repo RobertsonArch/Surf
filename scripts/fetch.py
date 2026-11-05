@@ -41,13 +41,31 @@ def compass(deg):
     return COMPASS[int((deg % 360) / 22.5 + 0.5) % 16]
 
 
+_CACHE = {}
+
+
 def get(url, key=None):
+    ck = key or url
+    if ck in _CACHE:
+        return _CACHE[ck]
+    _CACHE[ck] = _get(url, key)
+    return _CACHE[ck]
+
+
+def _get(url, key=None):
     if FIX and key:
         with open(os.path.join(FIX, key)) as f:
             return f.read()
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Cache-Control": "no-cache"})
-    with urllib.request.urlopen(req, timeout=45) as r:
-        return r.read().decode("utf-8", "replace")
+    with urllib.request.urlopen(req, timeout=60) as r:
+        raw = r.read()
+    if url.split("?")[0].endswith(".gz"):
+        import gzip
+        try:
+            raw = gzip.decompress(raw)
+        except OSError:
+            pass
+    return raw.decode("utf-8", "replace")
 
 
 def at_str(t, tz=TZ):
@@ -265,6 +283,76 @@ def wind_obs(station, name, tz=TZ_WA):
     return out
 
 
+# ---------------------------------------------------------------- buoy history (for the calculator)
+
+MONS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def parse_std(txt):
+    """Rows of an NDBC stdmet text file -> {hour_epoch: (h_cm, p_ds, d)} keeping the largest wave per hour."""
+    out = {}
+    for ln in txt.splitlines():
+        p = ln.split()
+        if len(p) < 12 or not re.fullmatch(r"\d{4}", p[0]):
+            continue
+        try:
+            t = dt.datetime(int(p[0]), int(p[1]), int(p[2]), int(p[3]), int(p[4]), tzinfo=UTC)
+        except ValueError:
+            continue
+        h, per, d = fnum(p[8]), fnum(p[9]), fnum(p[11])
+        if h is None or h >= 99:
+            continue
+        per = None if per is None or per >= 99 else per
+        d = None if d is None or d >= 999 else d
+        k = int(t.timestamp()) // 3600
+        if k not in out or h * 100 > out[k][0]:
+            out[k] = (round(h * 100), None if per is None else round(per * 10), None if d is None else round(d))
+    return out
+
+
+def history(station, seed=False):
+    """Hourly wave history per year in data/history/<station>_<year>.json as [hour, h_cm, p_ds, dir]."""
+    hdir = os.path.join(DATA, "history")
+    os.makedirs(hdir, exist_ok=True)
+    rows = parse_std(get(f"https://www.ndbc.noaa.gov/data/realtime2/{station}.txt?t={int(NOW.timestamp())}", f"{station}.txt"))
+    years = {}
+    if seed:
+        for y in range(2020, NOW.year):
+            path = os.path.join(hdir, f"{station}_{y}.json")
+            if os.path.exists(path):
+                continue
+            try:
+                txt = get(f"https://www.ndbc.noaa.gov/data/historical/stdmet/{station}h{y}.txt.gz")
+                years[y] = parse_std(txt)
+            except Exception as e:
+                print("WARN history", station, y, e, file=sys.stderr)
+        for m in range(1, 13):
+            if m > NOW.month:
+                break
+            base = "https://www.ndbc.noaa.gov/view_text_file.php?filename={}&dir=data/stdmet/" + MONS[m - 1] + "/"
+            for url in (base.format(f"{station}{m}{NOW.year}.txt.gz"), base.format(f"{station}{m:x}{NOW.year}.txt.gz"),
+                        f"https://www.ndbc.noaa.gov/data/stdmet/{MONS[m - 1]}/{station}.txt"):
+                try:
+                    got = parse_std(get(url))
+                    if not got:
+                        continue
+                    rows = {**got, **rows}
+                    break
+                except Exception:
+                    continue
+    for k, v in rows.items():
+        y = dt.datetime.fromtimestamp(k * 3600, UTC).year
+        years.setdefault(y, {})[k] = v
+    for y, new in years.items():
+        path = os.path.join(hdir, f"{station}_{y}.json")
+        old = {}
+        if os.path.exists(path):
+            old = {r[0]: tuple(r[1:]) for r in json.load(open(path))}
+        old.update(new)
+        with open(path, "w") as f:
+            json.dump([[k, *v] for k, v in sorted(old.items())], f, separators=(",", ":"))
+
+
 # ---------------------------------------------------------------- NOAA CO-OPS
 
 def coops(params, key):
@@ -447,7 +535,13 @@ def main():
         write("cal_tides.json", sorted(dedup(tides), key=lambda r: r["at"]))
         write("cal_currents.json", sorted(dedup(cur), key=lambda r: r["at"]))
 
+    def hist():
+        seed = "--seed" in sys.argv or not os.path.exists(os.path.join(DATA, "history", f"46087_{NOW.year - 1}.json"))
+        for st in ("46087", "46267"):
+            history(st, seed)
+
     job("buoys", buoys)
+    job("history", hist)
     job("swells", swells)
     job("wind_obs", wind_measured)
     job("tides", ap_tides)

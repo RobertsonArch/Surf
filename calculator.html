@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elwha – Will this swell work?</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Surf">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Source+Serif+4:opsz@8..60&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/odds-cells.js"></script>
+<style>
+:root{
+  --bg:var(--color-bg); --panel:var(--color-panel); --fg:var(--color-fg); --muted:var(--color-fg-muted); --grid:var(--color-border-line); --field:var(--color-bg);
+  --accent:#0b4f6c; --good:#2f7d4f; --goodbg:#dcefe3; --warn:#b7791f; --bad:#b4432f; --off:#eceae4;
+  --display:var(--font-anthropic-sans); --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root{--accent:#7cc8e4; --good:#6fcf97; --goodbg:#183428; --warn:#f2c46b; --bad:#f08a75; --off:#262622}}
+.wrap{max-width:72rem;margin:0 auto;display:grid;gap:16px}
+h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:clamp(1.6rem,4vw,2.1rem);margin:0;line-height:1.1}
+.sub{color:var(--muted);margin:4px 0 0;max-width:70ch}
+.eyebrow{font-size:var(--cds-font-size-caption);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.panel{background:var(--panel);border:1px solid var(--grid);border-radius:12px;padding:16px;display:grid;gap:14px;min-width:0}
+.inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end}
+label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+input{font:inherit;font-family:var(--mono);font-size:16px;color:var(--fg);background:var(--field);border:1px solid var(--grid);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.unit{display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)}
+.unit input{width:auto}
+button.go{font:inherit;font-weight:600;padding:9px 14px;border-radius:6px;border:none;background:var(--accent);color:var(--panel);cursor:pointer}
+button.go[disabled]{opacity:.6;cursor:progress}
+.status{font-size:.85rem;color:var(--muted);min-height:1.3em}
+.status.err{color:var(--bad)}
+.top{display:grid;grid-template-columns:auto auto 1fr;gap:18px;align-items:center}
+@media (max-width:560px){.top{grid-template-columns:1fr 1fr}.top>div:last-child{grid-column:1/-1}}
+.big b{display:block;font-weight:800;font-size:clamp(2.6rem,10vw,4.2rem);line-height:1;font-variant-numeric:tabular-nums}
+.big span{font-size:.85rem;color:var(--muted)}
+.verdict{font-weight:600;font-size:1.02rem;margin:0}
+.windows{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-family:var(--mono);font-size:.85rem}
+.ok{color:var(--good)} .no{color:var(--bad)} .maybe{color:var(--warn)}
+.strip{overflow-x:auto}
+table{border-collapse:separate;border-spacing:3px;font-variant-numeric:tabular-nums;font-size:.78rem;min-width:100%}
+th{font-family:var(--mono);font-weight:500;color:var(--muted);text-align:right;padding:2px 8px 2px 0;white-space:nowrap;position:sticky;left:0;background:var(--panel)}
+td{text-align:center;padding:5px 2px;border-radius:4px;min-width:34px;font-family:var(--mono);background:var(--off);color:var(--muted)}
+td.hr{background:none;color:var(--muted)}
+td .wd,td .ws{display:block;white-space:nowrap;line-height:1.25}
+td .wd{font-size:.68rem;letter-spacing:.02em}
+td .sd{display:block;white-space:nowrap;line-height:1.25;font-size:.68rem;opacity:.85}
+td.good{background:var(--goodbg);color:var(--good);font-weight:600}
+td.bad{color:var(--bad)}
+td.now{outline:2px solid var(--fg);outline-offset:-2px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.foot{font-size:.8rem;color:var(--muted);max-width:80ch;margin:0}
+</style>
+</head>
+<body>
+<nav class="site-nav"><a href="./">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html" aria-current="page">Swell calculator</a></nav>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Forecast check · Neah Bay → Angeles Point · Washington time</p>
+    <h1>Will this swell work?</h1>
+    <p class="sub">Opens on today with the latest Neah Bay reading filled in. Pick another day or type a swell forecast; the page loads that day’s tide, current and wind, then shows which hours fit the spot and the odds for each, based on every similar swell since 2020.</p>
+  </header>
+
+  <form class="panel" id="form" novalidate>
+    <div class="inputs">
+      <label for="day">Date<input id="day" type="date"></label>
+      <label for="hs">Swell height (m)<input id="hs" type="number" step="0.1" min="1.5" max="8" value="4.2" inputmode="decimal"></label>
+      <label for="tp">Period (s)<input id="tp" type="number" step="1" min="6" max="22" value="13" inputmode="numeric"></label>
+      <label for="dir">Direction from (°)<input id="dir" type="number" step="1" min="230" max="319" value="280" inputmode="numeric"></label>
+      <button class="go" id="go" type="submit">Check this day</button>
+    </div>
+    <label class="unit" for="ft"><input id="ft" type="checkbox"> Height in feet</label>
+    <div class="status" id="status" role="status"></div>
+  </form>
+
+  <section class="panel" aria-live="polite">
+    <div class="top">
+      <div class="big"><b id="pct">–</b><span id="pctLabel">Best-hour chance of 1.0 m+ at 10 s+</span></div>
+      <div class="big"><b id="size">–</b><span id="sizeLabel">Predicted size at Angeles Point</span></div>
+      <div>
+        <p class="verdict" id="verdict">Loading…</p>
+        <ul class="windows" id="windows"></ul>
+      </div>
+    </div>
+    <div class="strip"><table id="day-table" aria-label="Hour by hour conditions for the chosen day"></table></div>
+    <div class="legend">
+      <span><i style="background:var(--goodbg)"></i>Works: tide 0–6 ft, light, no east wind 10 km/h+</span>
+      <span><i style="background:var(--off)"></i>Ruled out (reason in red)</span>
+      <span>Current (for reference, not in the odds): F flood running in, E ebb running out, S slack, in knots</span>
+    </div>
+  </section>
+
+  <p class="foot">Tide is NOAA’s prediction for Port Angeles (9444090). Current is NOAA’s tidal current prediction for Angeles Point, 2 mi NNE (PUG1639), shown for reference only and not used in the odds. Wind is the National Weather Service hourly forecast for Port Angeles (about 6 days ahead); for today and past dates it is the observed wind at the Port Angeles station. Light is first to last light at Port Angeles. The odds compare your swell with every Neah Bay hour since 2020 from 230–319° and 1.5 m+, and how often Angeles Point then read 1.0 m+ at 10 s+, weighting the closest height (±0.5 m), period (±2 s) and direction (±7°). The predicted size is the average height Angeles Point reached in those similar swells, in the hours around the swell’s arrival. For today and future dates the swell shown is treated as running all day, and the odds assume it holds. For a past date the swell is filled from the Neah Bay buoy (NDBC 46087): each hour uses the Neah Bay reading from 2–3 hours earlier, matched to the swell’s travel time, and the Angeles Point buoy (46267) row shows what was actually measured. Buoy history comes from this site’s hourly archive of NOAA readings.</p>
+</div>
+
+<script>
+const DATA=CELLS.split(" ").map(c=>{const k=c.slice(0,4),[n,hit,sum]=c.slice(4).split(".").map(v=>parseInt(v,36));
+  return{h:1.75+0.5*parseInt(k[0],36),p:7+2*parseInt(k[1],36),d:232.5+5*parseInt(k[2],36),c:parseInt(k[3],36),n,hit,sum:sum/10}});
+function estimate0(hs,tp,dir,cur){let wn=0,wh=0,ws=0;
+ for(const c of DATA){const z=((c.h-hs)/0.5)**2+((c.p-tp)/2)**2+((c.d-dir)/7)**2;if(z>16)continue;let w=Math.exp(-0.5*z);
+  if(cur!=null){w*=c.c===cur?1:c.c===3?0.5:0.2}
+  wn+=w*c.n;wh+=w*c.hit;ws+=w*c.sum}
+ return wn>0?{p:wh/wn,ap:ws/wn,n:wn}:null}
+// Swells bigger than anything on record: judge them against the biggest swells that are, and flag it.
+function estimate(hs,tp,dir,cur){const r=estimate0(hs,tp,dir,cur);if((r&&r.n>=3)||!(hs>5))return r;
+ for(let h=hs-0.25;h>=4.5;h-=0.25){const r2=estimate0(h,tp,dir,cur);if(r2&&r2.n>=3)return{...r2,capped:true,at:h}}return r}
+
+const LAT=48.125, LON=-123.44, rad=Math.PI/180, H=3600e3, TZ="America/Los_Angeles";
+function sunAlt(t){const jd=t/864e5+2440587.5, T=(jd-2451545)/36525;
+ const L0=(280.46646+T*(36000.76983+T*0.0003032))%360, M=357.52911+T*(35999.05029-0.0001537*T), e=0.016708634-T*(0.000042037+0.0000001267*T);
+ const C=Math.sin(M*rad)*(1.914602-T*(0.004817+0.000014*T))+Math.sin(2*M*rad)*(0.019993-0.000101*T)+Math.sin(3*M*rad)*0.000289;
+ const om=125.04-1934.136*T, lam=L0+C-0.00569-0.00478*Math.sin(om*rad);
+ const eps=23+(26+((21.448-T*(46.815+T*(0.00059-T*0.001813))))/60)/60+0.00256*Math.cos(om*rad);
+ const dec=Math.asin(Math.sin(eps*rad)*Math.sin(lam*rad)), y=Math.tan(eps*rad/2)**2;
+ const eot=4/rad*(y*Math.sin(2*L0*rad)-2*e*Math.sin(M*rad)+4*e*y*Math.sin(M*rad)*Math.cos(2*L0*rad)-0.5*y*y*Math.sin(4*L0*rad)-1.25*e*e*Math.sin(2*M*rad));
+ const d=new Date(t), mins=d.getUTCHours()*60+d.getUTCMinutes();const ha=(mins+eot+4*LON)/4-180;
+ const cz=Math.sin(LAT*rad)*Math.sin(dec)+Math.cos(LAT*rad)*Math.cos(dec)*Math.cos(ha*rad);return 90-Math.acos(Math.max(-1,Math.min(1,cz)))/rad}
+
+const $=id=>document.getElementById(id);
+const localParts=t=>Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",hourCycle:"h23"}).formatToParts(new Date(t)).map(p=>[p.type,p.value]));
+const localDate=t=>{const p=localParts(t);return `${p.year}-${p.month}-${p.day}`};
+const localHour=t=>+localParts(t).hour;
+const ymd=s=>s.replace(/-/g,"");
+const shift=(s,days)=>{const d=new Date(s+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
+const cmp=deg=>["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5)%16];
+const fmtH=h=>`${String(h).padStart(2,"0")}:00`;
+const COMPASS={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};
+const hm=x=>new Intl.DateTimeFormat("en-CA",{timeZone:TZ,hour:"numeric",minute:"2-digit",hourCycle:"h23"}).format(new Date(x));
+
+async function fetchJSON(url){const r=await fetch(url,{cache:"no-cache"});if(!r.ok)throw {code:"http_"+r.status};return r.json()}
+
+// ---- buoy history (this site's hourly archive of NOAA NDBC readings) ----
+const lagOf=p=>Math.max(1,Math.round(91000/(0.78*(p||10))/3600));
+const histCache={};
+async function histYear(st,y){const k=st+"_"+y;if(!(k in histCache)){histCache[k]=fetchJSON(`data/history/${k}.json?v=${Math.floor(Date.now()/6e5)}`).catch(()=>[])}return histCache[k]}
+async function buoyDay(st,t0,t1){const y0=new Date(t0).getUTCFullYear(),y1=new Date(t1).getUTCFullYear();const hr=new Map();
+ for(let y=y0;y<=y1;y++){for(const [k,h,p,d] of await histYear(st,y)){const t=k*H;if(t<t0||t>t1)continue;hr.set(t,{t,h:h/100,p:p==null?null:p/10,d})}}
+ if(!hr.size)throw {code:"no_data"};return hr}
+async function latestNeah(){const now=Date.now(),y=new Date(now).getUTCFullYear();let rows=await histYear("46087",y);
+ if(!rows.length)rows=await histYear("46087",y-1);
+ for(let i=rows.length-1;i>=0;i--){const [k,h,p,d]=rows[i];if(p!=null&&d!=null)return{t:k*H,h:h/100,p:p/10,d}}return null}
+
+const CO="https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?time_zone=gmt&format=json&application=elwha_swell_calculator";
+async function loadDay(day){
+ const b=ymd(shift(day,-1)), e=ymd(shift(day,1)), out={tide:new Map(),cur:new Map(),wind:new Map(),windSrc:null,nb:null,ap:null,errors:[]};
+ const parseT=s=>Date.parse(s.replace(" ","T")+":00Z");
+ const today=localDate(Date.now());
+ const hrs=[];for(let t=Date.parse(shift(day,-1)+"T00:00:00Z");t<Date.parse(shift(day,2)+"T00:00:00Z");t+=H){if(localDate(t)===day)hrs.push(t)}
+ const jobs=[
+  fetchJSON(`${CO}&station=9444090&product=predictions&datum=MLLW&units=english&interval=h&begin_date=${b}&end_date=${e}`).then(j=>{for(const x of j.predictions||[])out.tide.set(parseT(x.t),+x.v)}).catch(err=>out.errors.push(["tide",err])),
+  fetchJSON(`${CO}&station=PUG1639&product=currents_predictions&units=metric&interval=h&begin_date=${b}&end_date=${e}`).then(j=>{for(const x of j.current_predictions?.cp||[])out.cur.set(parseT(x.Time),{v:+x.Velocity_Major,fd:+x.meanFloodDir,ed:+x.meanEbbDir})}).catch(err=>out.errors.push(["current",err])),
+ ];
+ if(day<=today)jobs.push(fetchJSON(`${CO}&station=9444090&product=wind&units=metric&interval=h&begin_date=${b}&end_date=${e}`).then(j=>{
+   for(const x of j.data||[]){const s=parseFloat(x.s),d=parseFloat(x.d);if(!isNaN(s)&&!isNaN(d))out.wind.set(parseT(x.t),{kmh:s*3.6,deg:d,obs:true})}out.windSrc="observed"}).catch(err=>out.errors.push(["observed wind",err])));
+ if(day>=today)jobs.push(fetchJSON("https://api.weather.gov/gridpoints/SEW/95,99/forecast/hourly").then(j=>({j})).catch(err=>({err})));
+ if(day<=today){const t0=hrs[0]-5*H,t1=hrs[hrs.length-1]+H;
+  jobs.push(buoyDay("46087",t0,t1).then(m=>{out.nb=m}).catch(err=>{if(day<today)out.errors.push(["Neah Bay buoy",err])}));
+  jobs.push(buoyDay("46267",hrs[0],t1).then(m=>{out.ap=m}).catch(err=>{if(day<today)out.errors.push(["Angeles Point buoy",err])}))}
+ const res=await Promise.all(jobs);
+ const fc=res.find(r=>r&&(r.j||r.err));
+ if(fc){if(fc.err)out.errors.push(["wind forecast",fc.err]);else{
+   for(const p of fc.j.properties?.periods||[]){const t=Date.parse(p.startTime);const mph=parseFloat(p.windSpeed);const deg=COMPASS[p.windDirection];
+    if(!isNaN(mph)&&deg!=null&&!out.wind.has(t))out.wind.set(t,{kmh:mph*1.609,deg})}out.windSrc=out.windSrc?"observed + forecast":"forecast"}}
+ return out}
+
+function swell(){let hs=parseFloat($("hs").value),tp=parseFloat($("tp").value),dir=parseFloat($("dir").value);if($("ft").checked)hs/=3.281;return{hs,tp,dir}}
+
+function setSize(e,label){$("size").textContent=e?(e.capped?"≥":"")+e.ap.toFixed(1)+" m":"–";$("sizeLabel").textContent=e?`${(e.ap*3.281).toFixed(1)} ft · ${label}`:label}
+let lastDay=null, lastData=null, manual=false, liveFill=false;
+function render(){
+ const {hs,tp,dir}=swell(), day=$("day").value;
+ const base=(isFinite(hs)&&isFinite(tp)&&isFinite(dir))?estimate(hs,tp,dir,null):null;
+ const tbl=$("day-table");
+ if(!lastData||lastDay!==day){
+  $("pct").textContent=base&&base.n>=3?Math.round(base.p*100)+"%":"–";
+  setSize(base&&base.n>=3?base:null,"predicted at Angeles Point");
+  $("pctLabel").textContent="Chance of 1.0 m+ at 10 s+ (swell only; check the day for tide, light and wind)";
+  $("verdict").textContent=base&&base.n>=3?(base.capped?`Bigger than any swell on record, so judged against the largest that are (about ${base.at.toFixed(1)} m); the real odds are likely higher.`:base.n<30?"Rough estimate: few similar swells on record.":`Typical height at Angeles Point: ${base.ap.toFixed(1)} m.`):"Too few similar swells on record to say.";
+  $("windows").innerHTML="";tbl.innerHTML="";return}
+ const today=localDate(Date.now());
+ const hasNb=!!(lastData.nb&&lastData.nb.size), past=hasNb&&!manual&&day<today;
+ const hours=[];for(let t=Date.parse(shift(day,-1)+"T00:00:00Z");t<Date.parse(shift(day,2)+"T00:00:00Z");t+=H){if(localDate(t)===day)hours.push(t)}
+ const nowH=Math.floor(Date.now()/H)*H;
+ const rows=hours.map(t=>{const h=localHour(t), tide=lastData.tide.get(t), v=lastData.cur.get(t), w=lastData.wind.get(t);
+  const light=sunAlt(t+30*60e3)>=-6, tideOk=tide!=null?tide>=0&&tide<=6:null;
+  const east=w?(w.deg>=45&&w.deg<=135&&w.kmh>=10):null;
+  let nbx=null;if(past){for(const L of [2,3,4]){const x=lastData.nb.get(t-L*H);if(x&&lagOf(x.p)===L){nbx=x;break}}if(!nbx)nbx=lastData.nb.get(t-3*H)||lastData.nb.get(t-2*H)||null}
+  const est=past?(nbx&&nbx.p&&nbx.d!=null?estimate(nbx.h,nbx.p,nbx.d,null):null):((isFinite(hs)&&isFinite(tp)&&isFinite(dir))?estimate(hs,tp,dir,null):null);
+  const nbNow=hasNb?lastData.nb.get(t)||null:null, apx=lastData.ap?lastData.ap.get(t)||null:null;
+  const works=light&&tideOk!==false&&east!==true;
+  return{t,h,tide,v,w,light,tideOk,east,est,works,nbx,nbNow,apx,now:t===nowH}});
+ const cell=(cls,txt,title)=>`<td class="${cls}"${title?` title="${title}"`:""}>${txt}</td>`;
+ let html=`<tr><th></th>${rows.map(r=>`<td class="hr${r.now?" now":""}">${String(r.h).padStart(2,"0")}</td>`).join("")}</tr>`;
+ html+=`<tr><th>Works?</th>${rows.map(r=>r.works&&r.est&&r.est.n>=3?cell("good",(r.est.capped?"≥":"")+Math.round(r.est.p*100)+"%",`${fmtH(r.h)}: ${r.est.capped?"at least ":""}${Math.round(r.est.p*100)}% chance${r.est.capped?" (bigger than any swell on record)":""}`):cell("", "–")).join("")}</tr>`;
+ html+=`<tr><th>Angeles Pt forecast m</th>${rows.map(r=>r.est&&r.est.n>=3?cell(r.works?"good":"",`${r.est.capped?"≥":""}${r.est.ap.toFixed(1)}`,`Predicted ${r.est.capped?"at least ":""}${r.est.ap.toFixed(1)} m (${(r.est.ap*3.281).toFixed(1)} ft) at Angeles Point`):cell("","?")).join("")}</tr>`;
+ html+=`<tr><th>Tide ft</th>${rows.map(r=>r.tide==null?cell("","?"):cell(r.tideOk?"":"bad",r.tide.toFixed(1))).join("")}</tr>`;
+ let fl=null,ll=null;if(hours.length){for(let x=hours[0];x<hours[hours.length-1]+H;x+=6e4){const up=sunAlt(x)>=-6;if(up&&fl==null)fl=x;if(up)ll=x+6e4}}
+ html+=`<tr><th>Light${fl?`<br><small>${hm(fl)}–${hm(ll)}</small>`:""}</th>${rows.map(r=>{const s=r.t,e=r.t+H;
+  if(fl!=null&&fl>s&&fl<e)return cell(r.light?"":"bad","from "+hm(fl),`First light ${hm(fl)}`);
+  if(ll!=null&&ll>s&&ll<e)return cell(r.light?"":"bad","to "+hm(ll),`Last light ${hm(ll)}`);
+  return cell(r.light?"":"bad",r.light?"✓":"dark")}).join("")}</tr>`;
+ html+=`<tr><th>Wind (from) km/h</th>${rows.map(r=>r.w?cell(r.east?"bad":"",`<span class="wd">${cmp(r.w.deg)}</span><span class="ws">${Math.round(r.w.kmh)}</span>`,`${Math.round(r.w.kmh)} km/h from ${cmp(r.w.deg)} (${Math.round(r.w.deg)}°)${r.w.obs?" measured":" forecast"}`):cell("","?")).join("")}</tr>`;
+ html+=`<tr><th>Current kt</th>${rows.map(r=>{if(!r.v)return cell("","?");const kt=Math.abs(r.v.v)/51.44,ph=Math.abs(r.v.v)<20?"S":r.v.v>0?"F":"E",dir=r.v.v>0?r.v.fd:r.v.ed;return cell("",ph==="S"?"S":`${ph}${kt.toFixed(1)}`,ph==="S"?"Slack":`${ph==="F"?"Flood":"Ebb"} ${kt.toFixed(1)} kt toward ${Math.round(dir)}°`)}).join("")}</tr>`;
+ if(hasNb)html+=`<tr><th>Neah Bay m · s · dir</th>${rows.map(r=>r.nbNow?cell("",`<span class="wd">${r.nbNow.h.toFixed(1)}</span><span class="ws">${r.nbNow.p?Math.round(r.nbNow.p)+"s":"?"}</span><span class="sd">${r.nbNow.d!=null?Math.round(r.nbNow.d)+"°":"?"}</span>`,`Neah Bay ${r.nbNow.h.toFixed(2)} m, ${r.nbNow.p??"?"} s from ${r.nbNow.d??"?"}°`):cell("","–")).join("")}</tr>`;
+ if(lastData.ap&&lastData.ap.size)html+=`<tr><th>Angeles Pt actual m · s · dir</th>${rows.map(r=>{const a=r.apx;if(!a)return cell("","–");const hit=a.h>=1.0&&a.p!=null&&a.p>=10;return cell(hit?"good":"",`<span class="wd">${a.h.toFixed(1)}</span><span class="ws">${a.p?Math.round(a.p)+"s":"?"}</span><span class="sd">${a.d!=null?Math.round(a.d)+"°":"?"}</span>`,`Angeles Point measured ${a.h.toFixed(2)} m at ${a.p??"?"} s from ${a.d??"?"}°${hit?" (1.0 m+ at 10 s+)":""}`)}).join("")}</tr>`;
+ tbl.innerHTML=html;
+ const nowCell=tbl.querySelector("td.now");if(nowCell&&!render.scrolled){render.scrolled=true;const s=tbl.parentElement;s.scrollLeft=Math.max(0,nowCell.offsetLeft-120)}
+ const good=rows.filter(r=>r.works&&r.est&&r.est.n>=3);
+ const wins=[];for(const r of good){const w=wins[wins.length-1];if(w&&r.t-w.end===H){w.end=r.t;w.rows.push(r)}else wins.push({start:r.t,end:r.t,rows:[r]})}
+ const best=good.reduce((a,b)=>!a||b.est.p>a.est.p?b:a,null);
+ $("pctLabel").textContent="Best-hour chance of 1.0 m+ at 10 s+";
+ const unknown=rows.some(r=>r.light&&(r.tide==null||r.w==null));
+ if(best){const pc=Math.round(best.est.p*100);$("pct").textContent=pc+"%";setSize(best.est,`predicted at Angeles Point, ${fmtH(best.h)}`);
+  const act=good.filter(r=>r.apx),hitN=act.filter(r=>r.apx.h>=1.0&&r.apx.p!=null&&r.apx.p>=10).length;
+  $("verdict").textContent=`${wins.length} window${wins.length>1?"s":""} that fit the spot. Best at ${fmtH(best.h)}: ${pc}% chance, typical ${best.est.ap.toFixed(1)} m.${best.est.capped?` Bigger than any swell on record, so judged against the largest that are (about ${best.est.at.toFixed(1)} m); the real odds are likely higher.`:best.est.n<30?" Rough: few similar swells on record.":""}${act.length?` Actual: Angeles Point hit 1.0 m+ at 10 s+ in ${hitN} of ${act.length} working hours.`:""}`;
+  $("verdict").className="verdict "+(best.est.p>=0.5?"ok":best.est.p>=0.25?"maybe":"no")}
+ else{$("pct").textContent="0%";const mxE=rows.filter(r=>r.est&&r.est.n>=3).reduce((a,b)=>!a||b.est.ap>a.est.ap?b:a,null);setSize(mxE?mxE.est:null,mxE?`biggest predicted at Angeles Point, ${fmtH(mxE.h)} (outside the spot's rules)`:"predicted at Angeles Point");$("verdict").textContent=rows.some(r=>r.works)?"This swell is outside the range of the record (230–319°, 1.5 m+), so there are no odds for it.":"No hour that day fits the spot's tide, light and wind rules.";$("verdict").className="verdict no"}
+ $("windows").innerHTML=wins.map(w=>{const cv=w.rows.filter(r=>r.v).map(r=>r.v.v);const curTxt=!cv.length?"current ?":(()=>{const f=cv.filter(v=>v>=20),eb=cv.filter(v=>v<=-20);const parts=[];if(f.length)parts.push(`flood to ${(Math.max(...f)/51.44).toFixed(1)} kt`);if(eb.length)parts.push(`ebb to ${(Math.max(...eb.map(Math.abs))/51.44).toFixed(1)} kt`);return parts.join(", ")||"slack"})();const ws=w.rows.filter(r=>r.w);const windTxt=!ws.length?"wind ?":(()=>{const cnt={};for(const r of ws){const c=cmp(r.w.deg);cnt[c]=(cnt[c]||0)+1}const dirs=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join("/");const sp=ws.map(r=>Math.round(r.w.kmh));const lo=Math.min(...sp),hi=Math.max(...sp);return `wind ${dirs} ${lo===hi?lo:lo+"–"+hi} km/h`})();const mx=Math.max(...w.rows.map(r=>r.est.p));const sz=w.rows.map(r=>r.est.ap),szLo=Math.min(...sz).toFixed(1),szHi=Math.max(...sz).toFixed(1),szTxt=`~${szLo===szHi?szLo:szLo+"–"+szHi} m`;const aa=w.rows.filter(r=>r.apx).map(r=>r.apx.h);const actTxt=aa.length?` · actual up to ${Math.max(...aa).toFixed(1)} m`:"";
+  return `<li>${fmtH(localHour(w.start))}–${fmtH((localHour(w.end)+1)%24)} · ${w.rows.length} h · ${windTxt} · ${curTxt} · ${szTxt} · up to ${Math.round(mx*100)}%${actTxt}</li>`}).join("")+(unknown?`<li class="maybe">Some daylight hours had no tide or wind data; they are counted as possible.</li>`:"")+(manual&&hasNb&&day<today?`<li class="maybe">Using the swell you entered instead of that day's Neah Bay readings. Press Check this day to go back to the buoy.</li>`:"")+(liveFill&&!manual?`<li>Swell is the latest Neah Bay reading, treated as holding all day.</li>`:"");
+}
+
+async function check(){const day=$("day").value;if(!day)return;
+ const btn=$("go"),st=$("status");btn.disabled=true;st.className="status";st.textContent="Loading tide, current and wind for "+day+"…";
+ const today=localDate(Date.now());
+ try{const d=await loadDay(day);lastDay=day;lastData=d;manual=false;liveFill=false;
+  let extra="";
+  if(day<today&&d.nb&&d.nb.size){const dayHrs=[...d.nb.values()].filter(r=>localDate(r.t)===day);const pk=(dayHrs.length?dayHrs:[...d.nb.values()]).reduce((a,b)=>b.h>a.h?b:a);
+   $("ft").checked=false;$("hs").value=pk.h.toFixed(1);if(pk.p)$("tp").value=Math.round(pk.p);if(pk.d!=null)$("dir").value=pk.d;
+   extra=" Swell filled from the Neah Bay buoy (day's peak shown; each hour uses that hour's reading)."}
+  if(day===today){const nb=await latestNeah();if(nb){$("ft").checked=false;$("hs").value=nb.h.toFixed(1);$("tp").value=Math.round(nb.p);$("dir").value=nb.d;liveFill=true;
+   extra=` Swell filled from the latest Neah Bay reading (${hm(nb.t)}: ${nb.h.toFixed(1)} m, ${Math.round(nb.p)} s, ${nb.d}°).`}}
+  const msgs=d.errors.map(([what,e])=>e&&e.code==="no_data"?`${what}: no readings for that date`:`${what}: couldn't load`);
+  const src=d.windSrc==="observed"?"observed wind":d.windSrc?d.windSrc+" wind":"no wind data for that date";
+  st.className=msgs.length?"status err":"status";
+  st.textContent=(msgs.length?msgs.join(" · ")+". ":"")+`Loaded NOAA tide, current and ${src} for ${day}.`+extra+(!d.wind.size&&!msgs.length?" Wind forecasts only reach about 6 days ahead.":"");
+ }catch(e){st.className="status err";st.textContent="Couldn't load the day's data."}
+ btn.disabled=false;render();save()}
+
+$("form").addEventListener("submit",e=>{e.preventDefault();check()});
+["hs","tp","dir"].forEach(id=>$(id).addEventListener("input",()=>{if(lastData&&lastDay===$("day").value)manual=true;render()}));
+$("day").addEventListener("change",()=>{render.scrolled=false;check()});
+$("ft").addEventListener("change",()=>{const v=parseFloat($("hs").value);if(isFinite(v))$("hs").value=($("ft").checked?v*3.281:v/3.281).toFixed(1);render()});
+function save(){}
+// start: ?date=YYYY-MM-DD (from the calendars) or today
+const q=new URLSearchParams(location.search);
+$("day").value=/^\d{4}-\d\d-\d\d$/.test(q.get("date")||"")?q.get("date"):localDate(Date.now());
+check();
+</script>
+</body>
+</html>
