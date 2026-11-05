@@ -1,0 +1,155 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<a href="../historical.html" style="display:inline-block;margin:12px max(16px,env(safe-area-inset-left,0px)) 0;font:13px system-ui,sans-serif;color:inherit;text-decoration:none;padding:6px 12px;border-radius:999px;border:1px solid rgba(127,127,127,.4)">← Elwha historical data</a>
+<title>Swells the Strait Missed</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: stats, event timeline, then two "why" bar charts side by side, then the biggest misses */
+:root{
+  --bg:#f3f6f7; --panel:#ffffff; --fg:#13232b; --muted:#5b6f78; --grid:#d6e0e4;
+  --nb:#c86b2a; --nbLong:#8a3f12; --nbShort:#e8b48a; --ap:#0b4f6c; --gap:#e6ecee;
+  --display:"Archivo",system-ui,sans-serif; --body:"Archivo",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d171c; --panel:#13222a; --fg:#e4eef1; --muted:#8fa6af; --grid:#25363e;
+  --nb:#f0a265; --nbLong:#ffcf9e; --nbShort:#8a5a36; --ap:#7cc8e4; --gap:#1a2b33; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d171c; --panel:#13222a; --fg:#e4eef1; --muted:#8fa6af; --grid:#25363e;
+  --nb:#f0a265; --nbLong:#ffcf9e; --nbShort:#8a5a36; --ap:#7cc8e4; --gap:#1a2b33; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(1.6rem,4vw,2.3rem);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:4px 0 0;max-width:72ch}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--panel);border-radius:8px;padding:12px 14px}
+.stat b{display:block;font-family:var(--display);font-size:1.5rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--muted)}
+.panel{background:var(--panel);border-radius:10px;padding:16px;min-width:0;display:grid;gap:8px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.scroll{overflow-x:auto}
+svg text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.tip{font-family:var(--mono);font-size:.82rem;min-height:1.5em;font-variant-numeric:tabular-nums}
+.note{font-size:.85rem;color:var(--muted);margin:0}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.88rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--grid);white-space:nowrap}
+th{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.n{font-family:var(--mono)}
+.foot{font-size:.82rem;color:var(--muted);max-width:78ch}
+rect.ev:focus-visible{outline:2px solid var(--nb);outline-offset:2px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Neah Bay (46087) vs Angeles Point (46267) · 2020–2026</div>
+    <h1>Swells the Strait missed</h1>
+    <p class="sub">Every stretch where Neah Bay read over 3 m from 270–290° and Angeles Point stayed under 1 m when that swell should have arrived, about 2–3 hours later depending on its period. Each bar is one event: the outside peak at Neah Bay, with the most Angeles Point managed during it marked in blue.</p>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <section class="panel">
+    <div class="eyebrow">Neah Bay peak (bar) and Angeles Point best (blue tick), metres</div>
+    <div class="scroll"><svg id="svg" role="img" aria-label="Swell events over 3 metres at Neah Bay from 270 to 290 degrees while Angeles Point stayed under 1 metre"></svg></div>
+    <div class="tip" id="tip">Hover or tap a bar for the event's details.</div>
+    <div class="legend">
+      <span><i style="background:var(--nbShort)"></i>Neah Bay period under 12 s</span>
+      <span><i style="background:var(--nb)"></i>12–14 s</span>
+      <span><i style="background:var(--nbLong)"></i>14 s and up</span>
+      <span><i style="background:var(--ap)"></i>Angeles Point best reading</span>
+      <span><i style="background:var(--gap)"></i>Neah Bay offline</span>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="panel">
+      <div class="eyebrow">How often 3 m+ at Neah Bay misses, by direction</div>
+      <svg id="byDir" role="img" aria-label="Share of 3 metre plus Neah Bay hours with Angeles Point under 1 metre, by direction"></svg>
+      <p class="note">Share of hours with Neah Bay over 3 m after which Angeles Point stayed under 1 m at the expected arrival time. Shaded bars are the 270–290° window this page covers.</p>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Within 270–290°, by Neah Bay period</div>
+      <svg id="byPer" role="img" aria-label="Share of 3 metre plus Neah Bay hours from 270 to 290 degrees with Angeles Point under 1 metre, by period"></svg>
+      <p class="note">Same measure, split by the dominant period at Neah Bay.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Biggest 15 misses</div>
+    <div class="scroll"><table id="top"><thead><tr><th>Dates (UTC)</th><th>Neah Bay peak</th><th>Period · dir</th><th>Hours</th><th>Angeles Pt range</th><th>AP period</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <p class="foot">Sources: NOAA National Data Buoy Center standard meteorological files for 46087 (Neah Bay) and 46267 (Angeles Point, CDIP 248), with real-time files for October 2026. Each buoy is reduced to its highest reading per clock hour; Neah Bay direction is its mean wave direction. Each Neah Bay hour is matched to Angeles Point after the swell's travel time over the ~91 km between the buoys, using deep-water group speed for the Neah Bay period (about 3 h at 10 s, 2.3 h at 14 s, 2 h at 16 s), and counts as a miss only if Angeles Point stayed under 1 m for the whole hour either side of that expected arrival. Hours where Angeles Point had a gap in that window are skipped. Neah Bay was offline from Dec 2020 to Sep 2022 and from Oct 2023 to Aug 2024, so no events can appear in those spans. Hours counts hours that met all three conditions; an event groups them when less than 12 hours apart.</p>
+</div>
+
+<script>
+// events with travel-time lag: Neah Bay hour vs Angeles Point max over the hour either side of expected arrival
+const RAW="2020-05-03T16 2020-05-04T04 5 3.3 10 271 10.81 0.5 0.29 9.52|2020-06-29T08 2020-06-29T08 1 3.43 10 275 10 0.94 0.94 10.53|2020-09-24T16 2020-09-24T22 5 4.19 12.12 275 12.9 0.48 0.38 8.7|2020-09-25T11 2020-09-26T07 6 4.35 10.81 272 12.9 0.49 0.35 10.53|2020-09-29T03 2020-09-29T10 3 3.33 13.79 271 13.79 0.56 0.45 11.76|2020-10-14T08 2020-10-14T09 2 3.76 11.43 276 11.43 0.76 0.67 7.69|2020-10-31T02 2020-10-31T02 1 3.91 12.12 280 12.12 0.92 0.92 12.5|2020-11-06T04 2020-11-06T09 6 4.62 12.9 278 12.9 0.99 0.66 11.76|2020-11-07T06 2020-11-08T06 17 3.68 11.43 283 10.81 0.98 0.57 11.11|2020-11-15T16 2020-11-16T03 4 6.3 16 274 16 0.99 0.85 13.33|2020-11-23T02 2020-11-23T02 1 3.51 12.12 271 12.12 0.86 0.86 11.11|2022-10-23T19 2022-10-23T19 1 3.28 9.09 286 9.09 0.85 0.85 9.09|2022-10-25T17 2022-10-25T17 1 3.57 11.43 271 11.43 0.93 0.93 9.52|2022-10-26T10 2022-10-26T17 3 3.2 11.43 270 11.43 0.94 0.73 10|2022-10-28T09 2022-10-28T09 1 4.08 11.43 273 11.43 0.97 0.97 11.11|2022-10-29T09 2022-10-29T11 2 3.71 12.9 270 16 0.95 0.95 13.33|2022-10-30T17 2022-10-30T17 1 3.75 12.9 273 12.9 0.92 0.92 12.5|2022-11-01T23 2022-11-01T23 1 3.07 12.9 278 12.9 0.94 0.94 12.5|2022-11-05T21 2022-11-06T06 6 4.84 12.12 274 12.12 0.93 0.77 12.5|2022-11-25T15 2022-11-25T15 1 3.31 12.9 271 12.9 0.82 0.82 13.33|2022-11-26T12 2022-11-26T12 1 3.21 12.12 271 12.12 0.62 0.62 9.09|2022-12-08T21 2022-12-09T12 5 4.27 12.9 278 12.9 0.94 0.55 11.76|2023-01-01T01 2023-01-01T01 1 3.06 13.79 275 13.79 0.91 0.91 8.33|2023-01-03T10 2023-01-03T10 1 3.22 12.9 275 12.9 0.7 0.7 11.76|2023-01-19T20 2023-01-19T21 2 3.43 12.9 272 12.9 0.79 0.79 11.11|2023-01-23T00 2023-01-23T00 1 3.06 12.12 275 12.12 0.86 0.86 12.5|2023-02-07T09 2023-02-07T11 2 4.1 12.9 272 12.9 0.85 0.85 10|2023-02-08T12 2023-02-08T21 3 3.61 12.12 273 12.12 0.91 0.44 8.33|2023-02-11T13 2023-02-11T16 4 3.94 12.12 275 12.12 0.96 0.76 12.5|2023-02-15T00 2023-02-15T10 2 3.46 13.79 276 13.79 0.98 0.69 13.33|2023-02-27T09 2023-02-27T13 3 3.17 12.9 275 12.9 0.93 0.84 11.76|2023-02-28T21 2023-02-28T21 1 3.03 12.12 280 12.12 0.61 0.61 13.33|2023-03-03T22 2023-03-04T07 3 3.8 14.81 273 14.81 0.89 0.83 14.29|2023-03-25T09 2023-03-25T11 3 3.51 10.81 281 11.43 0.92 0.81 10.53|2023-04-04T05 2023-04-04T05 1 3.01 8.33 285 8.33 0.72 0.72 5.13|2023-04-11T22 2023-04-12T00 2 3.09 12.12 275 12.12 0.77 0.77 11.76|2023-04-18T18 2023-04-18T18 1 3.12 11.43 270 11.43 0.59 0.59 11.11|2023-04-21T12 2023-04-21T19 3 3.04 11.43 270 11.43 0.98 0.79 10.53|2024-10-14T18 2024-10-14T18 1 3.01 14.81 273 14.81 0.66 0.66 8|2024-10-28T13 2024-10-29T04 9 4.26 12.12 273 12.12 0.99 0.82 11.11|2024-10-31T09 2024-11-01T00 6 4.1 16 272 14.81 0.6 0.41 10|2024-11-03T12 2024-11-04T13 8 4.57 12.9 279 12.9 0.92 0.58 11.76|2024-11-12T05 2024-11-12T06 2 3.87 16 270 16 0.59 0.57 10|2024-11-15T05 2024-11-15T23 4 4.54 13.79 270 12.12 0.69 0.35 11.76|2024-11-18T08 2024-11-19T15 18 4.64 12.9 272 12.9 0.97 0.43 11.11|2024-12-25T03 2024-12-25T03 1 5.67 13.79 276 13.79 0.92 0.92 12.5|2024-12-28T08 2024-12-28T15 2 4.15 16 270 16 0.75 0.49 14.29|2025-02-22T05 2025-02-22T05 1 3.72 11.43 270 11.43 0.59 0.59 12.5|2025-03-01T12 2025-03-01T12 1 3.37 19.05 276 19.05 0.56 0.56 11.76|2025-03-02T12 2025-03-02T12 1 3.39 12.9 273 12.9 0.89 0.89 12.5|2025-03-08T11 2025-03-08T15 4 3.47 11.43 271 11.43 0.81 0.72 10.53|2025-03-10T08 2025-03-10T08 1 3.09 12.9 276 12.9 0.57 0.57 11.76|2025-03-13T03 2025-03-13T03 1 3.27 12.12 279 12.12 0.67 0.67 10.53|2025-03-16T09 2025-03-16T09 1 3.45 12.12 273 12.12 0.8 0.8 8.7|2025-03-16T22 2025-03-16T23 2 3.35 14.81 288 14.81 0.75 0.69 11.76|2025-04-11T14 2025-04-11T14 1 3.72 11.43 273 11.43 0.91 0.91 11.76|2025-06-10T13 2025-06-10T13 1 3.44 10 278 10 0.99 0.99 11.76|2025-06-21T21 2025-06-21T23 3 3.16 10 275 10 0.96 0.91 10|2025-09-27T22 2025-09-27T22 1 3.22 10.81 273 10.81 0.55 0.55 11.11|2025-09-28T12 2025-09-28T12 1 3.21 10.81 280 10.81 0.75 0.75 9.09|2025-10-19T06 2025-10-19T06 1 3.34 10 276 10 0.81 0.81 11.76|2025-10-20T09 2025-10-21T15 5 4.64 12.9 271 12.12 0.77 0.45 10.53|2025-10-22T09 2025-10-22T09 1 3.04 14.81 270 14.81 0.91 0.91 10|2025-10-23T22 2025-10-24T04 2 4.47 14.81 270 14.81 0.9 0.51 11.76|2025-10-25T07 2025-10-25T11 3 3.24 13.79 283 12.9 0.78 0.56 10.53|2025-10-29T11 2025-10-29T11 1 3.7 16 273 16 0.83 0.83 4.08|2025-10-30T00 2025-10-30T11 11 4.58 12.12 270 12.12 0.83 0.41 11.11|2025-10-31T23 2025-10-31T23 1 3.38 16 270 16 0.54 0.54 10.53|2025-11-02T05 2025-11-04T01 11 3.84 12.12 279 12.9 0.88 0.49 12.5|2025-11-08T02 2025-11-08T09 2 3.36 11.43 271 12.9 0.92 0.6 12.5|2025-11-22T22 2025-11-22T22 1 3.3 13.79 277 13.79 0.97 0.97 10|2025-11-23T14 2025-11-23T14 1 3.07 12.12 276 12.12 0.95 0.95 4.76|2025-12-08T16 2025-12-08T16 1 3.07 12.9 279 12.9 0.71 0.71 11.11|2026-01-07T03 2026-01-08T00 14 3.76 10.81 278 10.81 0.99 0.5 11.76|2026-01-08T15 2026-01-09T11 15 4.6 16 272 14.81 0.96 0.75 11.76|2026-01-12T11 2026-01-12T11 1 3.39 14.81 271 14.81 0.66 0.66 14.29|2026-05-17T04 2026-05-17T04 1 3.33 10.81 272 10.81 0.97 0.97 10.53";
+// earlier same-hour pairing, kept for reference only (not drawn)
+const RAW_SAMEHOUR="2020-05-03T16 2020-05-04T04 5 3.3 10 271 10.81 0.41 0.28 10.53|2020-06-29T09 2020-06-29T12 4 4.02 10 277 10.81 0.96 0.85 10.53|2020-07-01T22 2020-07-01T22 1 3.02 9.09 271 9.09 0.65 0.65 9.09|2020-09-24T16 2020-09-26T09 21 4.35 10.81 272 11.43 0.53 0.28 10|2020-09-29T03 2020-09-29T13 6 3.33 13.79 271 13.79 0.5 0.35 13.33|2020-10-14T08 2020-10-14T09 2 3.76 11.43 276 11.43 0.99 0.92 9.09|2020-10-30T14 2020-10-30T14 1 3.45 9.09 274 9.09 0.84 0.84 4.44|2020-10-31T04 2020-10-31T06 3 3.86 11.43 288 10.81 0.92 0.62 12.5|2020-11-05T23 2020-11-06T10 6 4.89 14.81 278 12.9 0.99 0.53 13.33|2020-11-07T06 2020-11-08T10 24 3.89 12.12 283 11.43 0.98 0.47 11.11|2020-11-14T17 2020-11-14T18 2 4.68 12.9 274 13.79 0.83 0.73 11.76|2020-11-15T16 2020-11-16T11 11 6.3 16 274 16 0.99 0.65 11.76|2020-11-23T02 2020-11-23T02 1 3.51 12.12 271 12.12 0.5 0.5 11.76|2022-10-11T05 2022-10-11T16 3 3.18 9.09 279 9.09 0.7 0.62 6.9|2022-10-22T17 2022-10-23T04 2 3.75 10 278 10.81 0.9 0.68 10.53|2022-10-24T21 2022-10-25T00 3 3.6 12.9 270 12.9 0.91 0.73 11.11|2022-10-26T05 2022-10-26T17 6 3.45 11.43 274 11.43 0.91 0.52 11.11|2022-10-27T18 2022-10-31T01 24 4.23 14.81 272 12.12 0.98 0.52 11.11|2022-10-31T16 2022-11-02T01 6 3.58 12.9 270 12.9 0.97 0.42 11.11|2022-11-05T23 2022-11-06T10 11 4.84 12.12 274 12.9 0.93 0.54 11.76|2022-11-07T05 2022-11-07T05 1 3.07 12.12 275 12.12 0.79 0.79 13.33|2022-11-26T12 2022-11-26T12 1 3.21 12.12 271 12.12 0.59 0.59 11.11|2022-11-27T05 2022-11-27T07 3 3.64 11.43 277 11.43 0.9 0.8 10.53|2022-11-28T07 2022-11-28T09 2 3.46 12.12 281 12.12 0.95 0.9 11.76|2022-12-08T21 2022-12-09T12 6 4.82 11.43 270 12.9 0.94 0.45 11.76|2023-01-01T01 2023-01-01T01 1 3.06 13.79 275 13.79 0.79 0.79 8.33|2023-01-02T21 2023-01-03T09 2 3.36 13.79 273 13.79 0.82 0.45 15.38|2023-01-19T20 2023-01-19T21 2 3.43 12.9 272 12.9 0.84 0.72 12.5|2023-01-21T19 2023-01-22T06 3 3.88 13.79 273 14.81 0.9 0.81 12.5|2023-01-23T00 2023-01-23T00 1 3.06 12.12 275 12.12 0.76 0.76 11.76|2023-02-07T05 2023-02-07T11 3 4.1 12.9 272 11.43 0.66 0.32 10|2023-02-08T08 2023-02-08T21 3 3.61 12.12 273 12.12 0.9 0.6 8.33|2023-02-11T09 2023-02-11T16 3 4 12.9 272 12.9 0.96 0.8 11.76|2023-02-13T09 2023-02-13T10 2 3.39 16 270 16 0.94 0.92 15.38|2023-02-15T01 2023-02-15T10 4 3.71 12.9 276 13.79 0.98 0.77 11.76|2023-02-27T09 2023-02-27T13 3 3.17 12.9 275 12.9 0.96 0.93 11.76|2023-02-28T07 2023-02-28T21 3 3.22 11.43 273 12.12 0.97 0.68 13.33|2023-03-02T14 2023-03-02T14 1 3.04 10 272 10 0.48 0.48 10.53|2023-03-03T14 2023-03-04T01 5 4.46 13.79 274 14.81 0.99 0.86 14.29|2023-03-24T17 2023-03-24T19 2 4.05 12.12 276 12.12 0.82 0.81 11.11|2023-03-25T11 2023-03-25T20 3 3.16 13.79 274 12.12 0.96 0.67 10|2023-04-04T05 2023-04-04T05 1 3.01 8.33 285 8.33 0.69 0.69 4.76|2023-04-11T22 2023-04-12T00 2 3.09 12.12 275 12.12 0.84 0.63 11.76|2023-04-18T18 2023-04-18T18 1 3.12 11.43 270 11.43 0.55 0.55 10|2023-04-21T10 2023-04-21T19 4 3.34 12.12 271 12.12 0.7 0.44 11.76|2023-05-30T15 2023-05-30T15 1 3.04 8.33 278 8.33 0.94 0.94 11.11|2023-06-14T13 2023-06-14T13 1 3.88 10 275 10 0.94 0.94 10.53|2024-10-03T12 2024-10-03T12 1 3.07 11.43 277 11.43 0.94 0.94 11.11|2024-10-14T18 2024-10-14T18 1 3.01 14.81 273 14.81 0.66 0.66 10.53|2024-10-27T14 2024-10-27T14 1 3.22 11.43 271 11.43 0.6 0.6 14.29|2024-10-28T11 2024-10-29T07 15 4.29 13.79 272 12.12 0.97 0.46 11.11|2024-10-31T09 2024-11-01T00 6 4.1 16 272 14.81 0.48 0.34 13.33|2024-11-03T12 2024-11-04T13 13 4.57 12.9 279 12.12 0.99 0.43 11.11|2024-11-12T03 2024-11-12T15 5 4.67 12.9 270 14.81 0.96 0.52 10.53|2024-11-15T05 2024-11-15T23 8 4.54 13.79 270 12.12 0.83 0.35 11.11|2024-11-18T01 2024-11-19T15 28 4.64 12.9 272 12.9 0.99 0.36 11.11|2024-12-08T08 2024-12-08T08 1 3.28 10.81 271 10.81 0.83 0.83 12.5|2024-12-25T03 2024-12-25T03 1 5.67 13.79 276 13.79 0.79 0.79 14.29|2024-12-28T08 2024-12-28T15 2 4.15 16 270 16 0.66 0.49 13.33|2025-01-10T20 2025-01-10T20 1 3.51 7.14 274 7.14 0.98 0.98 3.7|2025-02-22T03 2025-02-22T05 2 3.95 12.9 270 12.9 0.44 0.41 12.5|2025-03-01T09 2025-03-01T12 2 3.37 19.05 276 19.05 0.58 0.35 11.76|2025-03-02T11 2025-03-03T04 5 3.39 12.9 273 13.79 0.91 0.85 13.33|2025-03-06T07 2025-03-06T10 4 3.76 13.79 274 12.9 0.89 0.67 13.33|2025-03-08T11 2025-03-09T00 5 3.47 11.43 271 11.43 0.8 0.52 11.11|2025-03-10T08 2025-03-10T08 1 3.09 12.9 276 12.9 0.41 0.41 10|2025-03-13T03 2025-03-13T03 1 3.27 12.12 279 12.12 0.57 0.57 13.33|2025-03-16T08 2025-03-16T09 2 3.46 12.12 272 12.12 0.83 0.8 12.5|2025-03-16T22 2025-03-17T01 4 3.35 14.81 288 14.81 0.75 0.53 11.76|2025-04-11T13 2025-04-11T19 5 3.64 10.81 280 10.81 0.91 0.6 11.11|2025-04-16T14 2025-04-16T14 1 3.05 13.79 273 13.79 0.99 0.99 11.11|2025-04-26T16 2025-04-26T16 1 3.35 9.09 275 9.09 0.89 0.89 9.09|2025-06-09T13 2025-06-09T15 3 3.55 9.09 286 9.09 0.86 0.73 9.09|2025-06-10T05 2025-06-10T17 4 3.65 10 276 10 0.99 0.96 11.11|2025-06-21T21 2025-06-21T21 1 3.07 9.09 275 9.09 0.73 0.73 9.52|2025-07-14T21 2025-07-14T21 1 3.1 8.33 279 8.33 0.98 0.98 8.33|2025-08-11T16 2025-08-11T19 3 3.3 9.09 283 9.09 0.99 0.95 9.52|2025-08-13T04 2025-08-13T06 3 3.54 9.09 277 8.33 0.94 0.9 8.7|2025-09-18T05 2025-09-18T13 4 3.33 11.43 275 10.81 0.98 0.67 11.76|2025-09-27T16 2025-09-27T17 2 3.45 11.43 272 12.12 0.98 0.47 11.11|2025-10-08T06 2025-10-08T08 2 3.03 9.09 279 9.09 0.95 0.82 5.56|2025-10-18T15 2025-10-18T15 1 3.07 10.81 272 10.81 0.9 0.9 11.11|2025-10-19T06 2025-10-19T18 4 5.24 11.43 272 11.43 0.75 0.39 10.53|2025-10-20T10 2025-10-22T09 15 4.6 12.12 280 12.12 0.98 0.35 10.53|2025-10-23T20 2025-10-25T11 10 4.77 14.81 271 14.81 0.9 0.47 11.11|2025-10-26T13 2025-10-26T22 3 3.96 11.43 271 10.81 0.83 0.77 11.76|2025-10-29T11 2025-10-29T11 1 3.7 16 273 16 0.72 0.72 4.44|2025-10-30T00 2025-10-30T11 11 4.58 12.12 270 12.12 0.83 0.34 12.5|2025-10-31T23 2025-10-31T23 1 3.38 16 270 16 0.6 0.6 15.38|2025-11-02T09 2025-11-04T01 17 3.92 12.9 289 12.9 0.92 0.45 12.5|2025-11-08T02 2025-11-08T09 3 3.36 11.43 271 12.12 0.89 0.75 11.11|2025-11-14T00 2025-11-14T00 1 3.07 8.33 275 8.33 0.96 0.96 11.11|2025-11-17T07 2025-11-17T10 3 3.25 9.09 275 10.81 0.94 0.8 9.09|2025-11-22T23 2025-11-23T00 2 3.17 12.9 270 16 0.95 0.9 10|2025-11-23T14 2025-11-23T18 2 3.07 12.12 276 12.12 0.93 0.91 8.7|2025-12-08T16 2025-12-08T21 4 3.41 12.9 275 12.9 0.96 0.61 11.76|2025-12-11T00 2025-12-11T03 3 3.27 11.43 278 11.43 0.97 0.23 11.11|2025-12-17T05 2025-12-17T05 1 3.28 10 270 10 0.33 0.33 9.52|2026-01-07T05 2026-01-08T03 20 3.91 12.9 282 11.43 0.99 0.31 11.76|2026-01-08T16 2026-01-09T11 16 4.6 16 272 14.81 0.96 0.64 11.76|2026-01-12T02 2026-01-12T11 3 3.74 14.81 271 14.81 0.66 0.4 15.38|2026-05-17T04 2026-05-17T04 1 3.33 10.81 272 10.81 0.93 0.93 12.5|2026-10-10T10 2026-10-10T10 1 3.2  282  0.8 0.8 9";
+// [start, end] of Neah Bay outages within the Angeles Point record
+const GAPS=[["2020-12-01","2022-09-24"],["2023-10-12","2024-08-15"]];
+// hours with Neah Bay > 3 m, by 5° direction bin: [bin, hours, share with Angeles Point < 1 m, median AP]
+const DIR=[[250,272,69,0.82],[255,318,54,0.93],[260,390,49,1.00],[265,407,38,1.15],[270,412,31,1.19],[275,309,25,1.39],[280,143,22,1.33],[285,49,22,1.26],[290,13,31,1.23]];
+// within 270–290°, by Neah Bay dominant period
+const PER=[["<10 s",116,3,1.78],["10–12 s",308,25,1.36],["12–14 s",393,33,1.18],["14–16 s",54,35,1.10],["16 s+",32,63,0.95]];
+
+const H=3600e3, MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const pt=s=>Date.parse(s+":00:00Z"), num=v=>v===""?null:+v;
+const E=RAW.split("|").map(r=>{const f=r.split(" ");return{s:pt(f[0]),e:pt(f[1]),n:+f[2],h:+f[3],p:num(f[4]),d:+f[5],pm:num(f[6]),amax:+f[7],amin:+f[8],ap:num(f[9])}});
+const ft=h=>(h*3.281).toFixed(1);
+const compass=deg=>["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5)%16];
+const col=r=>r.p==null||r.p<12?"var(--nbShort)":r.p<14?"var(--nb)":"var(--nbLong)";
+const fmt=t=>{const d=new Date(t);return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`};
+const range=r=>{const a=new Date(r.s),b=new Date(r.e);if(a.toISOString().slice(0,10)===b.toISOString().slice(0,10))return fmt(r.s);
+  if(a.getUTCFullYear()===b.getUTCFullYear()&&a.getUTCMonth()===b.getUTCMonth())return `${MON[a.getUTCMonth()]} ${a.getUTCDate()}–${b.getUTCDate()}, ${a.getUTCFullYear()}`;
+  return `${fmt(r.s).replace(/, \d{4}$/,"")}–${fmt(r.e)}`};
+
+// stats
+const hrs=E.reduce((s,r)=>s+r.n,0), big=E.reduce((a,b)=>b.h>a.h?b:a), long=E.reduce((a,b)=>b.n>a.n?b:a);
+const allN=DIR.filter(d=>d[0]>=270&&d[0]<=285).reduce((s,d)=>s+d[1],0), allMiss=DIR.filter(d=>d[0]>=270&&d[0]<=285).reduce((s,d)=>s+d[1]*d[2]/100,0);
+document.getElementById("stats").innerHTML=[
+ [E.length,`Events · ${hrs} hours`],
+ [`${big.h} m`,`Biggest miss · ${range(big)} at Neah Bay (${ft(big.h)} ft)`],
+ [`${long.n} h`,`Longest · ${range(long)}`],
+ [`${Math.round(allMiss/allN*100)}%`,"Of 3 m+ Neah Bay hours from 270–289° stayed under 1 m inside"]
+].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+// timeline
+(()=>{const t0=Date.UTC(2020,3,1),t1=Date.UTC(2026,10,1);
+ const svg=document.getElementById("svg"),W=1040,Hh=280,L=30,R=10,T=14,B=30,yMax=7;
+ svg.setAttribute("viewBox",`0 0 ${W} ${Hh}`);svg.style.width="100%";svg.style.minWidth="760px";
+ const x=t=>L+(t-t0)/(t1-t0)*(W-L-R), y=v=>T+(Hh-T-B)*(1-v/yMax);let s="";
+ GAPS.forEach(([a,b])=>{const xa=x(Date.parse(a+"T00:00Z")),xb=x(Date.parse(b+"T00:00Z"));s+=`<rect x="${xa}" y="${T}" width="${xb-xa}" height="${Hh-T-B}" fill="var(--gap)"/><text x="${(xa+xb)/2}" y="${T+14}" text-anchor="middle">Neah Bay offline</text>`});
+ for(let v=0;v<=yMax;v++) s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+ s+=`<line x1="${L}" x2="${W-R}" y1="${y(3)}" y2="${y(3)}" stroke="var(--nb)" stroke-dasharray="4 4"/><line x1="${L}" x2="${W-R}" y1="${y(1)}" y2="${y(1)}" stroke="var(--ap)" stroke-dasharray="4 4"/>`;
+ for(let yr=2020;yr<=2026;yr++){const xx=x(Date.UTC(yr,yr===2020?3:0,1));s+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${Hh-B}" stroke="var(--grid)"/><text x="${xx+3}" y="${Hh-10}">${yr===2020?"Apr 2020":yr}</text>`}
+ E.forEach((r,i)=>{const mid=(x(r.s)+x(r.e))/2;
+  s+=`<rect class="ev" tabindex="0" data-i="${i}" x="${mid-2}" y="${y(r.h)}" width="4" height="${y(0)-y(r.h)}" fill="${col(r)}"/>`;
+  s+=`<rect x="${mid-4}" y="${y(r.amax)-1.5}" width="8" height="3" fill="var(--ap)" pointer-events="none"/>`});
+ E.filter(r=>r.h>=5.2).forEach(r=>{const mid=(x(r.s)+x(r.e))/2;s+=`<text x="${mid}" y="${y(r.h)-6}" text-anchor="middle" style="fill:var(--fg)">${r.h} m</text>`});
+ svg.innerHTML=s;
+ const tip=document.getElementById("tip");
+ const show=e=>{const i=e.target.dataset.i;if(i==null)return;const r=E[i];tip.textContent=`${range(r)} · Neah Bay ${r.h} m (${ft(r.h)} ft)${r.p?` at ${r.p} s`:""} from ${r.d}° ${compass(r.d)} · Angeles Point ${r.amin}–${r.amax} m · ${r.n} h`};
+ svg.addEventListener("mouseover",show);svg.addEventListener("focusin",show);svg.addEventListener("click",show)})();
+
+// why charts: horizontal bars of miss share
+const hbars=(id,rows,shade)=>{const svg=document.getElementById(id),W=440,rowH=26,L=74,R=96,T=6,Hh=T+rows.length*rowH+20;
+ svg.setAttribute("viewBox",`0 0 ${W} ${Hh}`);svg.style.width="100%";
+ const x=v=>L+(W-L-R)*v/100;let s="";
+ [0,25,50,75,100].forEach(v=>{s+=`<line x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${Hh-18}" stroke="var(--grid)"/><text x="${x(v)}" y="${Hh-4}" text-anchor="middle">${v}%</text>`});
+ rows.forEach((r,i)=>{const yy=T+i*rowH, on=shade(r);
+  s+=`<text x="${L-8}" y="${yy+16}" text-anchor="end" style="fill:${on?"var(--fg)":"var(--muted)"}">${r[0]}</text>`;
+  s+=`<rect x="${L}" y="${yy+4}" width="${x(r[2])-L}" height="16" rx="2" fill="var(--nb)" fill-opacity="${on?1:.35}"/>`;
+  s+=`<text x="${x(r[2])+6}" y="${yy+16}" style="fill:var(--fg)">${r[2]}%</text><text x="${W-4}" y="${yy+16}" text-anchor="end">${r[1]} h</text>`});
+ svg.innerHTML=s};
+hbars("byDir",DIR.map(d=>[`${d[0]}–${d[0]+4}°`,d[1],d[2],d[3],d[0]]),r=>r[4]>=270&&r[4]<290);
+hbars("byPer",PER,()=>true);
+
+// table
+document.querySelector("#top tbody").innerHTML=[...E].sort((a,b)=>b.h-a.h).slice(0,15)
+ .map(r=>`<tr><td>${range(r)}</td><td class="n">${r.h.toFixed(2)} m (${ft(r.h)} ft)</td><td class="n">${r.p??"–"} s · ${r.d}° ${compass(r.d)}</td><td class="n">${r.n}</td><td class="n">${r.amin.toFixed(2)}–${r.amax.toFixed(2)} m</td><td class="n">${r.ap??"–"} s</td></tr>`).join("");
+</script>
+
+</body></html>

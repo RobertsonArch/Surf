@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Elwha Historical Data</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Surf">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Source+Serif+4:opsz@8..60&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/d3.min.js"></script>
+<style>
+  .hw { max-width: 72rem; margin: 0 auto; display: grid; gap: 16px; }
+  .hw h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 32px; line-height: 1.1; margin: 0; }
+  .eyebrow { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 4px; }
+  .card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 16px 18px; min-width: 0; }
+  .card h2 { font-size: var(--cds-font-size-heading); margin: 0 0 4px; font-weight: 600; }
+  .note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0 0 10px; }
+  .ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-bottom: 10px; }
+  .ctl label { display: grid; gap: 3px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ctl input, .ctl select { font: inherit; font-size: 16px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); }
+  .ctl button { font: inherit; font-size: var(--cds-font-size-caption); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg-muted); cursor: pointer; }
+  .ctl button[aria-pressed=true] { color: var(--color-fg); border-color: var(--color-fg); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 10px; margin: 10px 0; }
+  .stat { background: var(--color-bg); border-radius: 8px; padding: 8px 10px; }
+  .stat b { display: block; font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .chart { position: relative; min-height: 260px; }
+  .chart svg text { font-family: var(--font-anthropic-sans); font-size: 11px; fill: var(--color-fg-muted); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .legend i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+  .tip { font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; min-height: 1.4em; margin-top: 4px; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; width: 100%; }
+  th, td { padding: 5px 6px; text-align: center; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+  th { font-size: 11px; font-weight: 600; color: var(--color-fg-muted); text-transform: uppercase; }
+  td.y, th.y { text-align: left; }
+  td .cell { border-radius: 4px; padding: 3px 0; min-width: 34px; }
+  .list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+  .list a { display: block; text-decoration: none; background: var(--color-bg); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--color-border-line); }
+  .list a:hover { border-color: var(--color-fg-muted); }
+  .list b { display: block; margin-bottom: 2px; }
+  .list span { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .find { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+<nav class="site-nav"><a href="./">Home</a><a href="tofino.html">Tofino/Ucluelet</a><a href="ap.html">Elwha</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Elwha swell calculator</a><a href="historical.html" aria-current="page">Elwha historical data</a></nav>
+<main class="hw">
+  <header>
+    <p class="eyebrow">Neah Bay (46087) and Angeles Point (46267) · since 2020 · BC time</p>
+    <h1>Elwha Historical Data</h1>
+  </header>
+
+  <section class="card" id="browse">
+    <h2>Buoy archive</h2>
+    <p class="note">Hourly readings kept by this site from NOAA’s buoy records. Pick any stretch since 2020 to see how much of the Neah Bay swell made it down the Strait to Angeles Point.</p>
+    <div class="ctl">
+      <label>From<input type="date" id="from"></label>
+      <label>To<input type="date" id="to"></label>
+      <button type="button" data-days="7">7 days</button>
+      <button type="button" data-days="30">30 days</button>
+      <button type="button" data-days="90">90 days</button>
+      <button type="button" data-days="365">1 year</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="chart" id="chart"></div>
+    <div class="tip" id="tip">Hover or tap the chart for that hour’s readings.</div>
+    <div class="legend"><span><i style="background:var(--series-2)"></i>Neah Bay</span><span><i style="background:var(--series-0)"></i>Angeles Point</span><span><i style="background:var(--cds-chart-reference)"></i>3.9 ft (1.2 m) line</span></div>
+    <p class="src">Check the source: <a href="https://www.ndbc.noaa.gov/station_history.php?station=46087" target="_blank" rel="noopener">Neah Bay history (NOAA) ↗</a> · <a href="https://www.ndbc.noaa.gov/station_history.php?station=46267" target="_blank" rel="noopener">Angeles Point history (NOAA) ↗</a></p>
+  </section>
+
+  <section class="card" id="months">
+    <h2>Swell hours at Angeles Point by month</h2>
+    <p class="note">Hours when Angeles Point read 3.9 ft (1.2 m) or more at 10 s or longer, the size and period that usually means surf at the Elwha. This counts swell only, not tide, daylight or wind (the analysis pages below apply those). Hatched months had little or no data.</p>
+    <div class="scroll"><table id="mtable"></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Findings from the October analysis</h2>
+    <ul class="find">
+      <li><b>Direction matters most.</b> Swell has to come from roughly 270–330° to channel down the Strait. Big Neah Bay readings from the southwest often never reach the Elwha.</li>
+      <li><b>May is the most consistent month</b> once tide, daylight and wind are applied: about 21 rideable hours in a typical year, and never a bad year. February has the most potential but swings widely. December has the most swell, but it falls on dark tides.</li>
+      <li><b>The flood current brings more size.</b> Checked against NOAA’s current predictions (not buoy drift, which the wind contaminates), matching your experience on the water.</li>
+      <li><b>Travel time:</b> about 2–3 hours from Neah Bay to Angeles Point, and 4–7 hours from La Perouse Bank, depending on period and direction.</li>
+      <li><b>Clean NW swells of 5 m+ at Neah Bay are rare:</b> only 8 since 2004, all between mid-November and mid-January.</li>
+      <li><b>For the 2026–27 El Niño winter</b> (building toward strong, like 2015–16), mid-March through April lines up best for daylight and tide.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Analysis pages</h2>
+    <div class="list">
+      <a href="history/angeles-point-swells.html"><b>Angeles Point swells, 2020–2026</b><span>Every swell event of 1.2 m+ at 10 s+, rideable hours by month (tide, daylight and east wind applied), and the 12 biggest events.</span></a>
+      <a href="history/strait-vs-offshore.html"><b>How much swell makes it down the Strait</b><span>The 12 biggest Angeles Point events against Neah Bay or Cape Elizabeth, hour by hour.</span></a>
+      <a href="history/swells-the-strait-missed.html"><b>Swells the Strait missed</b><span>Times Neah Bay read over 3 m from 270–290° but Angeles Point stayed under 1 m.</span></a>
+      <a href="history/winter-2015-16.html"><b>The 2015–16 winter, buoy by buoy</b><span>The strongest El Niño winter on record: daily peaks at three buoys, monthly breakdown, every 4 m+ swell with a modelled Angeles Point outcome.</span></a>
+      <a href="history/el-nino-winter-2015-16.html"><b>2015–16 El Niño winter at Neah Bay</b><span>Daily peak height and period at Neah Bay, November to April, and the biggest days.</span></a>
+      <a href="history/nw-swells-2015-16.html"><b>WNW–NW swells of 4 m+, 2015–16</b><span>Every Neah Bay swell event of 4 m+ from 281–337° that winter.</span></a>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  const TZ = 'America/Vancouver', H = 3600e3;
+  const css = getComputedStyle(document.documentElement);
+  const C_NB = css.getPropertyValue('--series-2').trim(), C_AP = css.getPropertyValue('--series-0').trim();
+  const cache = {};
+  const year = (st, y) => (cache[st + y] = cache[st + y] || fetch(`data/history/${st}_${y}.json?v=${Math.floor(Date.now() / 36e5)}`).then((r) => (r.ok ? r.json() : [])).catch(() => []));
+  const load = async (st, t0, t1) => {
+    const out = [];
+    for (let y = new Date(t0).getUTCFullYear(); y <= new Date(t1).getUTCFullYear(); y++) {
+      for (const [k, h, p, d] of await year(st, y)) { const t = k * H; if (t >= t0 && t <= t1) out.push({ t, ft: h / 100 * 3.28084, m: h / 100, p: p == null ? null : p / 10, d }); }
+    }
+    return out;
+  };
+  const day = (ms) => new Date(ms).toLocaleDateString('en-CA', { timeZone: TZ });
+  const fmt = (ms, o) => new Date(ms).toLocaleString('en-US', { timeZone: TZ, ...o });
+  const C16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  const comp = (d) => (d == null ? '' : C16[Math.round(d / 22.5) % 16]);
+  const $ = (id) => document.getElementById(id);
+  const startOf = (ds) => Date.parse(`${ds}T00:00:00Z`) + 7 * H; // BC midnight (UTC-7)
+
+  async function draw() {
+    const a = $('from').value, b = $('to').value;
+    if (!a || !b || a > b) return;
+    const t0 = startOf(a), t1 = startOf(b) + 24 * H;
+    const [NB, AP] = await Promise.all([load('46087', t0, t1), load('46267', t0, t1)]);
+    const good = AP.filter((r) => r.m >= 1.2 && r.p >= 10);
+    const max = (s) => s.reduce((x, r) => (!x || r.ft > x.ft ? r : x), null);
+    const mn = max(NB), ma = max(AP);
+    $('stats').innerHTML = [
+      [ma ? `${ma.ft.toFixed(1)} ft` : '—', ma ? `Angeles Point peak · ${fmt(ma.t, { month: 'short', day: 'numeric', year: 'numeric' })}${ma.p ? ` · ${Math.round(ma.p)} s` : ''}` : 'Angeles Point peak'],
+      [mn ? `${mn.ft.toFixed(1)} ft` : '—', mn ? `Neah Bay peak · ${fmt(mn.t, { month: 'short', day: 'numeric', year: 'numeric' })}${mn.p ? ` · ${Math.round(mn.p)} s` : ''}` : 'Neah Bay peak'],
+      [good.length, 'Hours at Angeles Point of 3.9 ft+ at 10 s+'],
+      [AP.length ? `${Math.round(AP.length / ((t1 - t0) / H) * 100)}%` : '0%', 'Of hours with an Angeles Point reading'],
+    ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+    const el = $('chart');
+    el.replaceChildren();
+    if (!NB.length && !AP.length) { el.textContent = 'No readings in this range.'; return; }
+    const W = Math.max(300, el.clientWidth), Hh = 260, m = { l: 40, r: 10, t: 10, b: 26 };
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${Hh}`).attr('role', 'img').attr('aria-label', 'Wave height at Neah Bay and Angeles Point');
+    const x = d3.scaleTime([t0, t1], [m.l, W - m.r]);
+    const y = d3.scaleLinear([0, Math.max(6, d3.max([...NB, ...AP], (r) => r.ft) * 1.08)], [Hh - m.b, m.t]).nice();
+    y.ticks(5).forEach((v) => {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(v)).attr('y2', y(v)).attr('stroke', 'var(--cds-chart-grid)');
+      svg.append('text').attr('x', m.l - 6).attr('y', y(v)).attr('dy', '0.32em').attr('text-anchor', 'end').text(`${v} ft`);
+    });
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(3.94)).attr('y2', y(3.94)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
+    x.ticks(W < 500 ? 4 : 7).forEach((t) => svg.append('text').attr('x', x(t)).attr('y', Hh - 8).attr('text-anchor', 'middle').text(fmt(+t, (t1 - t0) > 120 * 864e5 ? { month: 'short', year: '2-digit' } : { month: 'short', day: 'numeric' })));
+    const line = (s, c, w) => {
+      const gaps = d3.line().defined((r) => r.gap !== true).x((r) => x(r.t)).y((r) => y(r.ft));
+      const pts = []; s.forEach((r, i) => { if (i && r.t - s[i - 1].t > 3 * H) pts.push({ gap: true }); pts.push(r); });
+      svg.append('path').datum(pts).attr('d', gaps).attr('fill', 'none').style('stroke', c).attr('stroke-width', w);
+    };
+    line(NB, C_NB, 1.3); line(AP, C_AP, 1.8);
+    const guide = svg.append('line').attr('y1', m.t).attr('y2', Hh - m.b).attr('stroke', 'var(--cds-chart-reference)').style('display', 'none');
+    const near = (s, t) => { let lo = 0, hi = s.length - 1; while (hi - lo > 1) { const md = (lo + hi) >> 1; if (s[md].t <= t) lo = md; else hi = md; } const c = [s[lo], s[hi]].filter(Boolean).sort((p, q) => Math.abs(p.t - t) - Math.abs(q.t - t))[0]; return c && Math.abs(c.t - t) <= 1.5 * H ? c : null; };
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', 0).attr('height', Hh).attr('fill', 'transparent')
+      .on('pointermove', (evt) => {
+        const t = +x.invert(d3.pointer(evt)[0]);
+        guide.attr('x1', x(t)).attr('x2', x(t)).style('display', null);
+        const n = near(NB, t), p = near(AP, t);
+        const s = (r) => (r ? `${r.ft.toFixed(1)} ft${r.p ? ` @ ${Math.round(r.p)} s` : ''}${r.d != null ? ` ${comp(r.d)}` : ''}` : 'no reading');
+        $('tip').textContent = `${fmt(t, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric' })} · Neah Bay ${s(n)} · Angeles Point ${s(p)}`;
+      })
+      .on('pointerleave', () => guide.style('display', 'none'));
+  }
+
+  async function months() {
+    const now = Date.now(), y1 = new Date(now).getUTCFullYear();
+    const counts = {}, cover = {};
+    for (let y = 2020; y <= y1; y++) for (const [k, h, p] of await year('46267', y)) {
+      const mk = day(k * H).slice(0, 7);
+      cover[mk] = (cover[mk] || 0) + 1;
+      if (h >= 120 && p != null && p >= 100) counts[mk] = (counts[mk] || 0) + 1;
+    }
+    const max = Math.max(1, ...Object.values(counts));
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    let h = `<thead><tr><th class="y"></th>${MON.map((m) => `<th>${m}</th>`).join('')}</tr></thead><tbody>`;
+    for (let y = y1; y >= 2020; y--) {
+      h += `<tr><td class="y"><b>${y}</b></td>`;
+      for (let mo = 1; mo <= 12; mo++) {
+        const k = `${y}-${String(mo).padStart(2, '0')}`, n = counts[k] || 0, c = cover[k] || 0;
+        const days = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+        if (Date.UTC(y, mo - 1, 1) > now) { h += '<td></td>'; continue; }
+        if (c < days * 24 * 0.5) { h += `<td><div class="cell" title="little or no data" style="background:repeating-linear-gradient(45deg,var(--cds-chart-grid) 0 4px,transparent 4px 8px);color:var(--color-fg-muted)">${n || ''}</div></td>`; continue; }
+        const a = n ? 0.12 + 0.88 * Math.sqrt(n / max) : 0;
+        h += `<td><div class="cell" title="${MON[mo - 1]} ${y}: ${n} hours" style="background:${n ? `color-mix(in srgb, ${C_AP} ${Math.round(a * 100)}%, transparent)` : 'transparent'};color:${a > 0.55 ? 'var(--color-panel)' : 'var(--color-fg-muted)'}">${n || '·'}</div></td>`;
+      }
+      h += '</tr>';
+    }
+    $('mtable').innerHTML = h + '</tbody>';
+  }
+
+  const setRange = (days) => {
+    const t = Date.now();
+    $('to').value = day(t); $('from').value = day(t - (days - 1) * 864e5);
+    document.querySelectorAll('.ctl button').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.days === days));
+    draw();
+  };
+  document.querySelectorAll('.ctl button').forEach((b) => b.addEventListener('click', () => setRange(+b.dataset.days)));
+  ['from', 'to'].forEach((id) => $(id).addEventListener('change', () => { document.querySelectorAll('.ctl button').forEach((b) => b.setAttribute('aria-pressed', false)); draw(); }));
+  $('from').min = '2020-01-01'; $('to').min = '2020-01-01';
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(draw, 200); });
+  setRange(30);
+  months();
+})();
+</script>
+</body>
+</html>

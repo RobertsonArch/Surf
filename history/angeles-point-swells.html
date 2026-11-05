@@ -1,0 +1,152 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<a href="../historical.html" style="display:inline-block;margin:12px max(16px,env(safe-area-inset-left,0px)) 0;font:13px system-ui,sans-serif;color:inherit;text-decoration:none;padding:6px 12px;border-radius:999px;border:1px solid rgba(127,127,127,.4)">← Elwha historical data</a>
+<title>Angeles Point Swells</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single readable column; long timeline, then month-by-year grid, then top events */
+:root{
+  --bg:#f3f6f7; --panel:#ffffff; --fg:#13232b; --muted:#5b6f78; --grid:#d6e0e4;
+  --short:#a9bcc4; --mid:#3f8fa8; --long:#0b4f6c; --hot:#c4442b; --gap:#e6ecee; --heat:11,79,108;
+  --display:"Archivo",system-ui,sans-serif; --body:"Archivo",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d171c; --panel:#13222a; --fg:#e4eef1; --muted:#8fa6af; --grid:#25363e;
+  --short:#4c626b; --mid:#4ea8c4; --long:#9fd8ec; --hot:#f07a5f; --gap:#1a2b33; --heat:159,216,236; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d171c; --panel:#13222a; --fg:#e4eef1; --muted:#8fa6af; --grid:#25363e;
+  --short:#4c626b; --mid:#4ea8c4; --long:#9fd8ec; --hot:#f07a5f; --gap:#1a2b33; --heat:159,216,236; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:24px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(1.6rem,4vw,2.3rem);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:4px 0 0;max-width:70ch}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--panel);border-radius:8px;padding:12px 14px}
+.stat b{display:block;font-family:var(--display);font-size:1.5rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--muted)}
+.panel{background:var(--panel);border-radius:10px;padding:16px;min-width:0;display:grid;gap:8px}
+.scroll{overflow-x:auto}
+svg text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.tip{font-family:var(--mono);font-size:.82rem;min-height:1.5em;font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--grid);white-space:nowrap}
+th{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.n{font-family:var(--mono)}
+.heat td,.heat th{text-align:center;padding:0;border:none}
+.heat th{padding:4px 2px}
+.heat th.yr{text-align:right;padding-right:10px}
+.heat td div{margin:2px;height:30px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.72rem;min-width:34px}
+.foot{font-size:.82rem;color:var(--muted);max-width:78ch}
+rect.ev:focus-visible{outline:2px solid var(--mid);outline-offset:2px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CDIP 248 / NDBC 46267 · Angeles Point, WA · Apr 2020 – Oct 2026</div>
+    <h1>Swells into the Strait at Angeles Point</h1>
+    <p class="sub">Every swell event where the buoy near Port Angeles read a significant height of 1.2 m or more at a peak period of 10 s or longer. Each bar is one event, drawn to its peak height and coloured by the period at that peak. The spot works with the tide between 0 and 6 ft, needs light, and shuts down in an east wind of 10 km/h or more, so the monthly grid and the rideable counts keep only swell hours with the tide in that window, between civil dawn and civil dusk, without that wind.</p>
+  </header>
+
+  <section class="stats" id="stats"></section>
+
+  <section class="panel">
+    <div class="eyebrow">Peak Hs by event (metres)</div>
+    <div class="scroll"><svg id="svg" role="img" aria-label="Swell events of 1.2 metres or more at 10 seconds or longer, April 2020 to October 2026"></svg></div>
+    <div class="tip" id="tip">Hover or tap a bar for the event's details.</div>
+    <div class="legend">
+      <span><i style="background:var(--mid)"></i>10–12 s</span>
+      <span><i style="background:var(--long)"></i>12 s and up</span>
+      <span><i style="background:var(--hot)"></i>3 m+ peak</span>
+      <span><i style="background:var(--gap)"></i>Buoy out of the water</span>
+      <span><i style="background:var(--mid);opacity:.3"></i>Faded: no rideable hours (tide, daylight, wind)</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Rideable hours by month: qualifying swell (1.2 m+ at 10 s+), tide 0–6 ft, daylight, no east wind of 10 km/h+</div>
+    <div class="scroll"><table class="heat" id="heat"></table></div>
+    <div class="legend"><span>Darker means more hours. Hatched cells had little or no data.</span></div>
+  </section>
+
+  <section class="panel">
+    <div class="eyebrow">Biggest 12 events</div>
+    <div class="scroll"><table id="top"><thead><tr><th>Dates (UTC)</th><th>Peak Hs</th><th>Feet</th><th>Period at peak</th><th>Longest period</th><th>Direction</th><th>Swell hours</th><th>Rideable</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <p class="foot">Source: NOAA National Data Buoy Center, station 46267 (CDIP 248) standard meteorological files: quality-controlled annual files for 2020–2025, monthly files for 2026, and the 45-day real-time file for October 2026, which has not been reviewed yet. Readings are every 30 minutes. Hours counts each hour with at least one qualifying reading, and an event groups qualifying readings less than 12 hours apart. Direction is the peak direction at the event's highest reading. The buoy only sees swell that travels in from the open ocean down the Strait of Juan de Fuca, so nearly every event arrives from 270–310°. Tides are hourly observed water levels at NOAA's Port Angeles station (9444090), in feet above MLLW, with the station's predictions filling October 2026; an hour counts as rideable when that hour's level sits from 0 to 6 ft and the sun at the middle of the hour is no more than 6° below the horizon at Port Angeles (civil twilight, roughly 30–40 minutes before sunrise and after sunset). Wind is the hourly average at the same Port Angeles station; an hour is ruled out when it blows from 45–135° (NE through SE) at 10 km/h or more. Hours with no wind reading (6 of the daylight, in-tide hours) are kept. The buoy was out of the water for parts of Aug 2021, Dec 2021, Sep–Oct 2023 and Feb–Apr 2026.</p>
+</div>
+
+<script>
+const RAW="20052908 20053105 2.19 11.76 297 38 14.29|20061704 20061706 1.37 10.53 294 3 10.53|20061920 20061920 1.4 10 286 1 10|20062820 20062916 1.82 10 274 7 11.11|20070208 20070216 1.9 10 293 7 11.76|20071710 20071713 1.46 10.53 289 2 10.53|20072014 20072014 1.41 10 287 1 10|20072111 20072111 1.22 10 290 1 10|20072210 20072210 1.22 10 294 1 10|20080917 20081007 1.46 12.5 294 10 12.5|20081102 20081215 2.07 10 286 24 11.76|20083000 20083011 1.69 10.53 300 7 10.53|20090221 20090310 1.43 12.5 300 6 12.5|20092917 20092917 1.35 10.53 282 1 10.53|20100623 20100623 1.2 10 285 1 10|20100812 20100812 1.27 10 281 1 10|20101107 20101109 1.29 11.11 288 3 11.11|20102003 20102009 1.35 10 287 4 11.76|20102411 20102413 1.25 10 284 2 10|20103020 20103103 1.44 10 290 7 13.33|20110601 20110605 1.41 13.33 300 4 14.29|20110716 20110716 1.23 10.53 293 1 10.53|20110816 20110816 1.23 10.53 299 1 10.53|20111016 20111208 2.49 11.11 285 34 12.5|20111321 20111502 2.48 10 293 18 13.33|20111607 20111607 1.26 10 297 1 10|20112320 20112412 1.64 11.76 295 11 12.5|20112721 20112809 1.49 11.11 292 10 12.5|20113017 20120113 2.01 10.53 291 11 14.29|20120310 20120310 1.2 10.53 285 1 10.53|20120411 20120412 1.34 12.5 296 2 12.5|20120901 20120906 1.54 11.76 297 6 13.33|20121120 20121207 1.55 13.33 292 6 13.33|20121409 20121507 2.04 14.29 303 13 14.29|20121608 20121608 1.26 12.5 295 1 12.5|20121723 20121811 1.33 11.11 285 9 13.33|20121909 20121911 1.41 12.5 294 2 12.5|20122622 20122708 1.58 14.29 299 7 14.29|20122908 20122909 1.29 11.76 295 2 11.76|20123100 20123120 1.89 12.5 294 11 13.33|21010301 21010304 1.37 10.53 291 4 15.38|21011220 21011221 1.49 14.29 301 2 14.29|21011315 21011402 2.15 10.53 294 12 11.76|21011912 21011913 1.27 10.53 287 2 11.11|21012112 21012116 1.36 11.11 291 3 12.5|21012218 21012406 1.73 13.33 299 24 13.33|21012423 21012620 2.76 12.5 289 44 13.33|21012801 21012802 1.33 12.5 302 2 12.5|21012909 21012910 1.42 10.53 291 2 10.53|21020601 21020717 2.48 10.53 297 15 10.53|21021409 21021411 1.9 12.5 299 3 12.5|21021613 21021615 1.33 11.11 304 3 11.76|21021704 21021704 1.23 11.11 300 1 11.76|21022001 21022105 1.62 11.11 286 19 13.33|21022118 21022412 2.05 10.53 302 56 13.33|21022504 21022506 1.42 10 276 3 11.76|21022521 21022720 2.78 10.53 295 32 13.33|21022809 21022810 1.45 10.53 293 2 11.11|21030122 21030310 1.91 11.11 301 21 13.33|21032223 21032303 1.43 10.53 302 5 11.76|21032506 21032705 2.09 10.53 275 30 11.76|21032905 21033014 3.69 10 274 25 12.5|21040208 21040208 1.23 10.53 283 1 10.53|21040422 21040500 1.47 11.76 287 3 11.76|21041005 21041117 2.1 11.11 292 26 12.5|21042202 21042202 1.38 10 282 1 10|21050521 21050603 1.39 11.11 293 5 11.76|21050717 21050819 1.58 10.53 281 15 11.11|21051016 21051016 1.25 10.53 289 1 10.53|21051515 21051515 1.39 10 295 1 10|21051901 21051906 1.42 11.11 301 5 11.76|21052003 21052005 1.44 10.53 300 3 11.11|21060304 21060304 1.28 10.53 293 1 10.53|21060405 21060409 1.82 10 304 5 11.76|21060519 21060620 1.95 11.11 279 18 12.5|21060718 21060719 1.55 10 288 2 10.53|21070105 21070105 1.27 10 292 1 10|21070120 21070120 1.28 10 292 1 10|21070519 21070519 1.35 11.11 295 1 11.76|21082718 21082723 1.36 10 283 4 11.11|21090606 21090609 1.48 10 295 4 11.11|21091614 21091614 1.27 11.11 281 1 11.11|21091916 21091916 1.3 11.11 271 1 11.11|21092808 21092809 1.63 10 300 2 11.11|21100319 21100319 1.26 10 303 1 10|21100414 21100522 1.58 13.33 295 26 13.33|21101110 21101112 1.8 10 289 3 11.76|21101310 21101501 1.76 12.5 296 15 12.5|21101515 21101516 1.51 11.76 291 2 11.76|21102719 21102719 1.2 12.5 300 1 12.5|21102901 21102901 1.2 12.5 296 1 12.5|21102917 21102917 1.38 10.53 303 1 11.11|21110613 21110700 1.29 11.76 297 5 11.76|21111007 21111012 2.37 11.11 292 6 13.33|21111602 21111602 1.85 10 297 1 10|21112306 21112406 1.57 10.53 295 7 13.33|21112600 21112613 1.6 11.11 292 9 14.29|21120308 21120410 1.71 10.53 302 19 13.33|21122320 21122406 1.79 10.53 302 9 12.5|21122503 21122507 1.58 13.33 292 5 13.33|21122601 21122706 2.08 11.76 291 22 13.33|21122906 21123000 1.34 10.53 294 6 11.76|21123015 21123120 2.74 10.53 289 20 12.5|22010309 22010401 1.7 13.33 303 8 14.29|22010800 22010801 2.19 10.53 297 2 10.53|22012103 22012207 1.7 10.53 297 19 11.76|22012311 22012314 1.26 11.76 304 4 12.5|22012405 22012416 1.33 11.76 297 8 15.38|22013121 22020109 1.74 10.53 281 9 11.76|22020508 22020609 2.17 10.53 298 16 11.76|22020800 22020904 1.64 11.11 292 18 13.33|22021001 22021001 1.26 11.76 289 1 11.76|22021102 22021106 1.67 10.53 291 4 12.5|22021515 22021616 2.22 10 297 18 11.11|22021909 22021911 1.48 11.11 284 3 11.76|22022102 22022107 1.52 10 295 5 10|22022204 22022211 1.56 10.53 297 5 11.11|22031922 22032004 1.38 10 293 6 11.11|22032018 22032102 1.31 11.76 298 4 13.33|22032400 22032400 1.35 11.76 308 1 11.76|22033102 22033109 1.57 10 281 6 12.5|22040104 22040104 1.32 11.11 300 1 11.76|22040414 22040602 2.14 10.53 304 27 14.29|22040817 22040902 2.24 10 294 7 11.11|22041012 22041014 1.23 10 301 2 10.53|22041216 22041308 1.51 11.11 294 7 11.76|22050523 22050604 1.39 10 281 3 12.5|22050618 22050700 1.6 11.11 304 4 12.5|22050800 22050800 1.6 10.53 292 1 10.53|22051000 22051000 1.27 11.76 289 1 11.76|22052603 22052603 1.26 10 289 1 10|22060300 22060307 1.5 11.76 294 3 11.76|22071210 22071301 1.91 10 293 10 11.76|22072701 22072701 1.35 10 295 1 10.53|22090803 22090803 1.25 12.5 294 1 12.5|22091912 22091912 1.32 10.53 287 1 10.53|22092508 22092508 1.24 11.76 296 1 11.76|22092521 22092521 1.2 10.53 293 1 10.53|22102013 22102118 1.45 11.11 299 9 13.33|22102222 22102316 1.38 10.53 304 8 11.11|22102501 22102517 2.11 10.53 275 10 13.33|22102702 22102703 1.39 10.53 293 2 11.11|22102721 22102723 1.27 10.53 297 2 10.53|22102902 22102903 1.25 10.53 292 2 11.76|22102915 22102916 1.43 10 287 2 11.11|22103104 22110115 1.79 11.11 290 22 13.33|22110315 22110315 1.26 10.53 294 1 10.53|22110510 22110522 2.65 10 302 9 11.76|22110706 22110807 1.64 11.76 299 12 13.33|22112714 22112815 1.83 11.76 302 15 12.5|22113014 22120110 2.42 10.53 304 11 11.76|22120904 22120911 1.49 10.53 298 7 12.5|22122806 22122808 2.6 10.53 291 3 11.11|23011815 23011906 1.49 10.53 296 7 12.5|23012209 23012210 1.36 12.5 301 2 12.5|23012711 23012712 1.28 11.76 289 2 11.76|23012903 23012903 1.52 10 292 1 10|23020720 23020803 1.4 13.33 302 5 13.33|23021112 23021114 1.55 11.11 301 3 12.5|23021314 23021505 3.04 11.11 289 33 14.29|23021704 23021707 1.5 10 292 4 10.53|23021723 23021808 1.51 11.11 286 8 13.33|23021907 23022312 4 11.76 300 75 15.38|23022401 23022402 1.38 10.53 303 2 10.53|23022619 23022703 2.39 10.53 283 9 11.11|23022804 23022815 1.4 13.33 305 3 13.33|23030219 23030308 2.26 10.53 286 14 12.5|23030419 23030420 1.4 14.29 298 2 14.29|23032422 23032509 1.84 10 304 6 11.11|23032601 23032601 1.24 10.53 283 1 10.53|23033019 23033019 1.26 10 301 1 10|23040914 23040915 1.27 11.76 296 2 12.5|23041700 23041703 1.83 11.76 303 4 12.5|23042113 23042113 1.21 12.5 298 1 12.5|23042919 23042919 1.22 13.33 305 1 13.33|23050502 23050502 1.29 11.76 294 1 11.76|23052313 23052316 1.25 10 298 2 10|23052715 23052716 1.29 10 290 2 10|23053119 23053121 1.28 11.11 293 3 11.11|23061409 23061500 1.66 10 297 8 11.11|23061514 23061514 1.25 10 284 1 10|23061720 23061802 1.71 10 294 3 11.76|23061820 23061822 1.58 10.53 300 3 10.53|23081413 23081516 1.99 10 288 16 12.5|23081808 23081818 1.99 10 292 6 10.53|23102322 23102322 1.58 10 284 1 10|23111915 23112017 2.7 11.76 312 26 13.33|23112201 23112305 1.96 11.11 304 24 13.33|23120205 23120213 1.63 10.53 299 4 11.76|23120414 23120415 1.86 11.76 290 2 11.76|23121613 23121613 1.31 10.53 286 1 10.53|23122222 23122303 1.44 11.76 297 6 11.76|23122318 23122319 1.23 10 301 2 10.53|24010521 24010711 1.89 11.76 301 17 14.29|24010912 24011018 3.65 11.76 295 26 14.29|24011108 24011212 1.85 10 293 7 11.76|24021222 24021223 1.34 10 297 2 12.5|24022509 24022509 1.21 10.53 280 1 10.53|24022604 24022716 2.67 10 297 16 11.76|24022903 24022916 1.41 10 302 8 12.5|24032006 24032007 1.29 11.76 304 2 11.76|24040300 24040302 1.86 11.76 288 3 11.76|24040406 24040407 1.4 10.53 298 2 11.76|24040506 24040605 1.32 11.11 298 6 11.11|24040708 24040708 1.24 11.11 294 1 11.11|24040801 24040806 1.27 11.76 292 4 11.76|24040908 24040912 1.4 10 299 5 12.5|24042116 24042122 1.6 10.53 290 7 11.11|24042421 24042423 1.46 10.53 286 3 10.53|24042822 24042900 1.62 10.53 290 3 11.11|24043000 24043003 1.67 10 290 3 10.53|24050513 24050602 1.29 10 287 3 11.11|24050718 24050720 1.44 10.53 281 3 11.11|24051401 24051403 1.4 11.76 303 3 11.76|24051502 24051503 1.22 10 297 2 10.53|24051711 24051713 1.37 10 304 3 10|24052210 24052217 2.98 10 299 8 10.53|24052516 24052518 1.9 10.53 306 3 10.53|24052818 24052902 1.58 10.53 298 5 11.11|24060403 24060403 1.3 11.76 301 1 11.76|24060606 24060618 1.48 11.11 306 3 11.11|24061003 24061017 1.67 12.5 308 14 12.5|24061200 24061220 2.98 11.11 299 21 12.5|24062322 24062423 2 11.11 296 11 12.5|24090207 24090207 1.2 13.33 299 1 13.33|24090220 24090222 1.32 10.53 297 2 11.76|24091214 24091216 1.48 10 294 2 10|24091721 24091721 1.33 10 288 1 10|24092510 24092616 1.45 11.11 295 12 12.5|24092801 24092919 1.66 10.53 287 24 11.76|24100214 24100406 2.27 11.11 292 19 14.29|24100506 24100509 1.52 10 282 3 11.11|24102715 24102808 1.74 11.11 300 13 13.33|24102822 24102822 1.29 12.5 301 1 12.5|24110409 24110515 3.28 10.53 300 20 12.5|24110811 24110814 1.54 10 297 4 11.76|24110903 24111017 2.16 11.76 295 33 14.29|24111217 24111217 1.33 10 293 1 10|24111712 24111809 1.45 11.11 300 9 12.5|24120810 24120905 2.87 10.53 307 15 11.11|24121505 24121511 1.59 10 304 7 11.11|24122617 24122619 1.3 11.76 297 3 12.5|24122907 24122908 1.28 12.5 310 2 14.29|25010317 25010317 1.21 11.76 301 1 11.76|25011115 25011221 1.84 11.11 291 13 13.33|25011402 25011409 1.24 11.76 295 3 13.33|25011508 25011511 1.86 11.76 293 4 12.5|25011621 25011714 1.35 10.53 304 5 11.76|25011810 25011810 1.24 11.11 292 1 11.11|25012505 25012507 1.43 10.53 298 3 10.53|25020116 25020119 1.49 10 296 3 10.53|25030309 25030311 1.37 11.11 295 3 12.5|25030614 25030614 1.21 11.76 304 1 11.76|25031001 25031001 1.26 11.11 304 1 11.11|25040704 25040705 1.38 11.11 297 2 11.76|25040718 25040807 1.41 11.76 306 11 12.5|25040903 25040908 1.47 10 293 5 11.76|25041121 25041123 1.28 10.53 285 3 10.53|25041522 25041704 1.81 10 286 19 12.5|25041823 25041921 2.55 10.53 284 18 11.76|25042015 25042121 1.87 10.53 305 21 11.76|25042701 25042702 1.43 10 287 2 10.53|25050322 25050503 1.57 10 307 13 12.5|25050700 25050807 1.75 11.76 296 22 13.33|25051314 25051403 1.61 10 290 5 10.53|25052008 25052102 1.6 10.53 298 12 13.33|25052122 25052200 1.33 10 290 2 10|25052619 25052620 1.54 10 282 2 10.53|25060104 25060107 1.57 10 299 2 10|25060308 25060308 1.41 10 297 1 10|25060923 25061019 1.69 10 282 10 11.76|25061112 25061112 1.28 10 300 1 10|25062002 25062005 1.34 10 294 3 11.11|25062123 25062123 1.22 10 285 1 10|25071706 25071806 1.37 10 289 8 10.53|25081712 25081716 1.56 10 310 5 10.53|25091815 25091819 1.56 11.11 288 4 11.11|25092019 25092019 1.32 10.53 294 1 10.53|25092117 25092308 1.92 10.53 293 16 12.5|25092718 25092812 1.73 11.11 301 11 12.5|25092912 25092913 1.33 10 287 2 11.76|25101206 25101222 1.75 10 272 9 11.11|25101717 25101819 1.57 10.53 293 11 12.5|25101920 25102007 1.74 10 281 4 11.11|25102121 25102123 1.42 11.11 305 3 11.11|25102916 25102923 1.52 12.5 299 8 15.38|25110112 25110204 1.95 10 288 15 14.29|25110219 25110219 1.2 12.5 296 1 12.5|25110718 25110800 1.87 11.76 303 7 13.33|25111319 25111403 1.37 11.76 302 5 11.76|25112103 25112110 1.95 14.29 301 8 14.29|25112200 25112312 1.91 12.5 305 15 13.33|25112412 25112413 1.4 11.76 302 2 12.5|25120611 25120710 2.58 11.76 299 22 13.33|25120801 25120805 1.33 11.11 296 5 11.11|25120823 25120909 2.13 12.5 301 10 12.5|25121908 25121908 1.54 10.53 307 1 10.53|25122712 25122805 1.95 10.53 301 8 11.11|25122913 25122913 1.27 11.76 297 1 11.76|25123006 25123006 1.31 10.53 293 1 10.53|26010106 26010107 1.39 10 289 2 10.53|26010807 26010815 1.68 11.11 302 8 13.33|26042711 26042715 1.67 10.53 303 5 11.11|26050122 26050122 1.28 11.76 290 1 11.76|26050420 26050600 1.36 11.76 287 6 12.5|26050715 26050801 1.36 10.53 294 4 11.11|26051922 26052000 1.3 10.53 296 3 11.11|26052302 26052317 1.29 10 287 3 10|26052618 26052619 1.39 13.33 295 2 13.33|26052913 26053007 2.25 10.53 289 8 12.5|26053020 26053022 1.41 10 284 3 11.11|26060600 26060601 1.34 10.53 294 2 10.53|26060619 26060619 1.24 10 301 1 10|26062006 26062012 1.56 10 298 7 11.11|26063001 26063015 1.84 10 296 5 10|26070115 26070115 1.2 10 286 1 10|26090310 26090310 1.41 11.11 289 1 11.11|26091019 26091019 1.23 10.53 284 1 10.53|26092202 26092300 1.5 11 295 12 13|26092319 26092508 1.5 12 300 19 12|26092520 26092606 2 10 293 6 10|26100902 26100903 1.4 11 294 2 12|26100918 26101020 1.8 10 278 17 11|26102304 26102305 1.2 10 286 2 11";
+// rideable hours per event, in order: tide 0–6 ft MLLW at Port Angeles (9444090), between civil dawn and civil dusk, and no east wind of 10 km/h+
+const EVOK="24,1,1,4,1,1,1,0,0,8,12,4,2,0,0,0,0,0,0,2,0,0,1,12,1,0,3,2,1,0,0,0,0,1,0,0,0,3,0,0,0,0,1,0,0,6,7,1,0,1,0,0,0,6,18,0,12,0,9,4,11,14,0,0,17,1,3,11,0,1,3,2,1,0,14,2,0,1,1,4,0,0,0,0,1,15,0,7,2,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,7,0,0,1,9,6,1,0,8,0,0,0,3,4,1,1,0,12,7,1,1,2,4,1,1,1,1,5,0,0,0,0,1,3,3,4,0,0,0,0,3,1,3,1,0,2,0,0,0,0,0,0,0,0,12,0,2,24,1,7,0,6,0,2,1,1,1,4,1,1,1,2,2,3,4,0,1,3,5,5,0,4,2,0,0,0,3,0,3,2,0,1,0,4,0,0,3,0,3,0,2,0,7,3,3,2,3,3,3,2,2,3,0,5,1,0,5,13,7,0,2,2,0,3,11,12,0,4,0,0,0,4,1,0,4,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,7,0,3,5,8,12,2,5,10,1,8,2,2,0,0,5,1,1,1,2,4,3,1,10,4,0,0,8,1,0,4,5,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,4,1,4,4,3,2,2,2,3,2,1,1,3,1,0,1,5,7,2,0,6,0".split(",").map(Number);
+// [qualifying swell hours, of which tide 0–6 ft, of which also in daylight, of which also free of east wind] per month
+const MONH={"2020-05":[38,29,24,24],"2020-06":[11,7,6,6],"2020-07":[12,6,3,3],"2020-08":[41,36,25,24],"2020-09":[7,6,3,2],"2020-10":[18,12,2,2],"2020-11":[82,64,19,19],"2020-12":[69,41,5,5],"2021-01":[95,55,17,15],"2021-02":[134,96,40,37],"2021-03":[81,71,40,38],"2021-04":[31,26,18,18],"2021-05":[30,27,22,20],"2021-06":[26,19,17,17],"2021-07":[3,2,2,2],"2021-08":[4,4,4,4],"2021-09":[8,3,0,0],"2021-10":[50,37,25,25],"2021-11":[28,13,0,0],"2021-12":[81,44,3,3],"2022-01":[43,22,7,7],"2022-02":[77,62,25,25],"2022-03":[17,16,9,9],"2022-04":[44,36,26,21],"2022-05":[10,9,9,9],"2022-06":[3,1,1,1],"2022-07":[11,6,5,5],"2022-09":[4,4,1,1],"2022-10":[49,36,11,11],"2022-11":[53,25,8,8],"2022-12":[13,9,1,1],"2023-01":[12,8,0,0],"2023-02":[142,91,47,46],"2023-03":[24,20,10,10],"2023-04":[8,7,7,7],"2023-05":[8,8,8,8],"2023-06":[15,10,8,8],"2023-08":[22,13,10,10],"2023-10":[1,0,0,0],"2023-11":[50,36,7,6],"2023-12":[15,9,3,3],"2024-01":[50,17,5,5],"2024-02":[27,15,5,5],"2024-03":[2,2,0,0],"2024-04":[37,32,24,23],"2024-05":[30,23,21,21],"2024-06":[50,31,26,26],"2024-09":[42,34,18,18],"2024-10":[36,34,17,16],"2024-11":[67,44,5,5],"2024-12":[27,15,4,4],"2025-01":[30,17,0,0],"2025-02":[3,3,3,3],"2025-03":[5,2,0,0],"2025-04":[81,58,40,37],"2025-05":[56,41,28,28],"2025-06":[18,11,8,8],"2025-07":[8,6,2,2],"2025-08":[5,4,4,4],"2025-09":[34,31,18,18],"2025-10":[35,18,13,13],"2025-11":[53,30,6,6],"2025-12":[48,17,0,0],"2026-01":[10,7,0,0],"2026-04":[5,5,4,4],"2026-05":[30,21,21,21],"2026-06":[15,12,7,7],"2026-07":[1,1,1,1],"2026-09":[39,34,15,15],"2026-10":[21,18,6,6]};
+// readings per month, from the NDBC files (30-minute data; a full month is ~1440)
+const COV={"2020-04":1392,"2020-05":1441,"2020-06":1402,"2020-07":1461,"2020-08":1461,"2020-09":1424,"2020-10":1446,"2020-11":1348,"2020-12":1441,"2021-01":1454,"2021-02":1323,"2021-03":1071,"2021-04":1414,"2021-05":1463,"2021-06":1347,"2021-07":1049,"2021-08":227,"2021-09":1412,"2021-10":1457,"2021-11":1410,"2021-12":810,"2022-01":1454,"2022-02":1321,"2022-03":1452,"2022-04":1412,"2022-05":1422,"2022-06":1423,"2022-07":1484,"2022-08":1486,"2022-09":1440,"2022-10":1483,"2022-11":1435,"2022-12":1483,"2023-01":1474,"2023-02":1341,"2023-03":1488,"2023-04":1432,"2023-05":1480,"2023-06":1440,"2023-07":1447,"2023-08":1479,"2023-09":96,"2023-10":671,"2023-11":1405,"2023-12":1487,"2024-01":1486,"2024-02":1392,"2024-03":1486,"2024-04":1401,"2024-05":1486,"2024-06":1386,"2024-07":1110,"2024-08":715,"2024-09":1375,"2024-10":1480,"2024-11":1436,"2024-12":1476,"2025-01":1487,"2025-02":1342,"2025-03":1488,"2025-04":1435,"2025-05":1486,"2025-06":1432,"2025-07":1482,"2025-08":1482,"2025-09":1435,"2025-10":1472,"2025-11":1433,"2025-12":1410,"2026-01":1447,"2026-02":69,"2026-04":294,"2026-05":1438,"2026-06":1436,"2026-07":1462,"2026-08":1469,"2026-09":1440,"2026-10":1300};
+const GAPS=[["2021-07-23","2021-08-27"],["2021-12-08","2021-12-22"],["2023-09-02","2023-10-17"],["2026-02-02","2026-04-24"]];
+const pt=s=>Date.UTC(2000+ +s.slice(0,2),+s.slice(2,4)-1,+s.slice(4,6),+s.slice(6,8));
+const E=RAW.split("|").map((r,i)=>{const [a,b,h,p,d,n,pm]=r.split(" ");return{s:pt(a),e:pt(b),h:+h,p:+p,d:+d,n:+n,pm:+pm,ok:EVOK[i]}});
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const ft=h=>(h*3.281).toFixed(1);
+const compass=deg=>["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5)%16];
+const col=r=>r.h>=3?"var(--hot)":r.p>=12?"var(--long)":"var(--mid)";
+const fmt=t=>{const d=new Date(t);return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`};
+const range=r=>{const a=new Date(r.s),b=new Date(r.e);const sameDay=a.toISOString().slice(0,10)===b.toISOString().slice(0,10);
+  if(sameDay)return fmt(r.s); if(a.getUTCFullYear()===b.getUTCFullYear()&&a.getUTCMonth()===b.getUTCMonth())return `${MON[a.getUTCMonth()]} ${a.getUTCDate()}–${b.getUTCDate()}, ${a.getUTCFullYear()}`;
+  return `${fmt(r.s).replace(/, \d{4}$/,"")}–${fmt(r.e)}`};
+
+// stats
+const big=E.reduce((a,b)=>b.h>a.h?b:a), best=E.reduce((a,b)=>b.ok>a.ok?b:a);
+const tot=E.reduce((s,r)=>s+r.n,0), okTot=E.reduce((s,r)=>s+r.ok,0), dead=E.filter(r=>r.ok===0).length;
+const tideTot=Object.values(MONH).reduce((s,v)=>s+v[1],0), lightTot=Object.values(MONH).reduce((s,v)=>s+v[2],0);
+document.getElementById("stats").innerHTML=[
+ [E.length,"Events since Apr 2020"],
+ [tot.toLocaleString("en-US"),"Hours of qualifying swell (1.2 m+ at 10 s+)"],
+ [tideTot.toLocaleString("en-US"),`Of those with the tide at 0–6 ft (${Math.round(tideTot/tot*100)}%)`],
+ [lightTot.toLocaleString("en-US"),`Of those also in daylight (${Math.round(lightTot/tot*100)}%)`],
+ [okTot.toLocaleString("en-US"),`Rideable: also no east wind of 10 km/h+ (${Math.round(okTot/tot*100)}%)`],
+ [`${best.ok} h`,`Most rideable hours in one event · ${range(best)}`],
+ [dead,"Events with no rideable hours"]
+].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+// timeline
+const t0=Date.UTC(2020,3,1),t1=Date.UTC(2026,10,1);
+const svg=document.getElementById("svg"),W=1040,H=300,L=30,R=10,T=14,B=30,yMax=4.5;
+svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.style.width="100%";svg.style.minWidth="760px";
+const x=t=>L+(t-t0)/(t1-t0)*(W-L-R), y=v=>T+(H-T-B)*(1-v/yMax);
+let s="";
+GAPS.forEach(([a,b])=>{const xa=x(Date.parse(a+"T00:00Z")),xb=x(Date.parse(b+"T00:00Z"));s+=`<rect x="${xa}" y="${T}" width="${xb-xa}" height="${H-T-B}" fill="var(--gap)"/>`});
+for(let v=0;v<=4;v++) s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+s+=`<line x1="${L}" x2="${W-R}" y1="${y(1.2)}" y2="${y(1.2)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
+for(let yr=2020;yr<=2026;yr++){const xx=x(Date.UTC(yr,yr===2020?3:0,1));s+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${H-B}" stroke="var(--grid)"/><text x="${xx+3}" y="${H-10}">${yr===2020?"Apr 2020":yr}</text>`}
+E.forEach((r,i)=>{const mid=(x(r.s)+x(r.e))/2;s+=`<rect class="ev" tabindex="0" data-i="${i}" x="${mid-1.5}" y="${y(r.h)}" width="3" height="${y(0)-y(r.h)}" fill="${col(r)}"${r.ok?"":' fill-opacity="0.3"'}/>`});
+E.filter(r=>r.h>=3.2).forEach(r=>{const mid=(x(r.s)+x(r.e))/2;s+=`<text x="${mid}" y="${y(r.h)-6}" text-anchor="middle" style="fill:var(--fg)">${r.h} m</text>`});
+svg.innerHTML=s;
+const tip=document.getElementById("tip");
+const show=e=>{const i=e.target.dataset.i;if(i==null)return;const r=E[i];tip.textContent=`${range(r)} · ${r.h} m (${ft(r.h)} ft) · ${r.p} s at peak, up to ${r.pm} s · from ${r.d}° ${compass(r.d)} · ${r.n} h of swell, ${r.ok} rideable h (tide 0–6 ft, daylight, no east wind)`};
+svg.addEventListener("mouseover",show);svg.addEventListener("focusin",show);svg.addEventListener("click",show);
+
+// month-by-year grid
+const hours={},tot2={},tide2={},light2={};for(const k in MONH){tot2[k]=MONH[k][0];tide2[k]=MONH[k][1];light2[k]=MONH[k][2];hours[k]=MONH[k][3]}
+const hmax=Math.max(...Object.values(hours));
+let g=`<thead><tr><th></th>${MON.map(m=>`<th class="eyebrow">${m}</th>`).join("")}</tr></thead><tbody>`;
+for(let yr=2020;yr<=2026;yr++){g+=`<tr><th class="yr eyebrow">${yr}</th>`;
+ for(let m=1;m<=12;m++){const k=`${yr}-${String(m).padStart(2,"0")}`, c=COV[k]||0, h=hours[k]||0;
+  const future=Date.UTC(yr,m-1,1)>=t1||Date.UTC(yr,m-1,1)<t0;
+  if(future){g+=`<td><div></div></td>`;continue}
+  const days=new Date(Date.UTC(yr,m,0)).getUTCDate(), cov=c/(days*48);
+  if(cov<0.5){g+=`<td><div title="${MON[m-1]} ${yr}: little or no data" style="background:repeating-linear-gradient(45deg,var(--gap) 0 4px,transparent 4px 8px);color:var(--muted)">${h||""}</div></td>`;continue}
+  const a=h?0.12+0.88*Math.sqrt(h/hmax):0;
+  g+=`<td><div title="${MON[m-1]} ${yr}: ${h} rideable of ${tot2[k]||0} swell hours (${tide2[k]||0} with tide 0–6 ft, ${light2[k]||0} of those in daylight)" style="background:${h?`rgba(var(--heat),${a.toFixed(2)})`:"var(--bg)"};color:${a>0.55?"var(--panel)":"var(--muted)"}">${h||"·"}</div></td>`}
+ g+=`</tr>`}
+document.getElementById("heat").innerHTML=g+"</tbody>";
+
+// top events
+document.querySelector("#top tbody").innerHTML=[...E].sort((a,b)=>b.h-a.h).slice(0,12)
+ .map(r=>`<tr><td>${range(r)}</td><td class="n">${r.h.toFixed(2)} m</td><td class="n">${ft(r.h)}</td><td class="n">${r.p} s</td><td class="n">${r.pm} s</td><td class="n">${r.d}° ${compass(r.d)}</td><td class="n">${r.n}</td><td class="n">${r.ok}</td></tr>`).join("");
+</script>
+
+</body></html>
