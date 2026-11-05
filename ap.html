@@ -654,7 +654,7 @@
     if (!ok('wind')) return reset(el, 'wind');
     el.classList.remove('dash-skeleton');
     const fc = ok('wave_forecast') ? dash.data('wave_forecast').data.stations || {} : {};
-    hourly.render(el, { tz: TZ, wind: rows('wind'), tides: rows('tides'), currents: rows('currents'), sun: rows('sun'), waves: [{ label: 'Neah Bay', rows: fc['46087'], dir: true }, { label: 'La Perouse', rows: fc['46206'] }], elwha: true });
+    hourly.render(el, { tz: TZ, wind: rows('wind'), tides: rows('tides'), currents: rows('currents'), sun: rows('sun'), waves: [{ label: 'Neah Bay', rows: fc['46087'], dir: true }, { label: 'La Perouse', rows: fc['46206'], dir: true }], elwha: true });
   });
   dash.draw('buoyForecast', (el) => buoyForecast.section(el, [
     { id: '46087', name: 'Neah Bay', obsId: 'neah_buoy', obs: (r) => r, color: dash.colors[2] },
