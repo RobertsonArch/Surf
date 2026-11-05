@@ -13,8 +13,8 @@ window.buoyForecast = (() => {
     const t0 = now - 24 * 3600e3, t1 = now + 7 * 864e5;
     const F = rows.map((r) => ({ ...r, t: Date.parse(r.utc) })).filter((r) => r.t >= t0 && r.t <= t1);
     const O = obs.map((r) => ({ t: r.utc ? Date.parse(r.utc) : NaN, v: r.wave_ft })).filter((r) => r.t >= t0 && r.v != null);
-    const W = Math.max(300, el.clientWidth), H = 250;
-    const m = { l: 40, r: 10, t: 14, b: 58 };
+    const W = Math.max(300, el.clientWidth), H = 264;
+    const m = { l: 40, r: 10, t: 14, b: 72 };
     el.replaceChildren();
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Buoy wave height forecast for the next 7 days');
     const x = d3.scaleTime([t0, t1], [m.l, W - m.r]);
@@ -52,6 +52,7 @@ window.buoyForecast = (() => {
       const tr = r.trains[0], cx = x(r.t);
       svg.append('path').attr('d', ARROW).attr('transform', `translate(${cx},${H - m.b + 28}) rotate(${(tr.dir_deg + 180) % 360})`).style('fill', 'var(--color-fg)');
       svg.append('text').attr('x', cx).attr('y', H - m.b + 48).attr('text-anchor', 'middle').style('font-size', '10px').text(`${Math.round(tr.period_s)}s`);
+      svg.append('text').attr('x', cx).attr('y', H - m.b + 61).attr('text-anchor', 'middle').style('font-size', '10px').text(`${tr.dir_deg}°`);
     });
     // hover
     let tip = el.querySelector('.fc-tip');
@@ -67,7 +68,7 @@ window.buoyForecast = (() => {
         guide.attr('x1', x(r.t)).attr('x2', x(r.t)).style('display', null);
         const o = O.length ? O.reduce((a, c) => (Math.abs(c.t - t) < Math.abs(a.t - t) ? c : a), O[0]) : null;
         const lines = [fmt(r.t, tz, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric' }), `Forecast ${r.hs_ft} ft total`,
-          ...r.trains.map((tr) => `${tr.height_ft} ft @ ${tr.period_s} s ${tr.direction}`)];
+          ...r.trains.map((tr) => `${tr.height_ft} ft @ ${tr.period_s} s ${tr.direction} ${tr.dir_deg}°`)];
         if (o && Math.abs(o.t - t) < 45 * 60e3) lines.push(`Measured ${o.v} ft`);
         tip.replaceChildren(...lines.map((l, i) => { const d = document.createElement('div'); d.textContent = l; if (!i) d.className = 't'; return d; }));
         tip.hidden = false;
@@ -93,7 +94,7 @@ window.buoyForecast = (() => {
     avail.forEach((b) => { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = b.name; bt.setAttribute('aria-pressed', b.id === el.__sel); bt.onclick = () => { el.__sel = b.id; section(el, buoys, tz); }; tabs.append(bt); });
     const chart = document.createElement('div'); chart.className = 'fc-chart';
     const cap = document.createElement('p'); cap.className = 'fc-cap';
-    cap.textContent = `${fc.model}, run of ${fmt(Date.parse(fc.cycle), tz, { month: 'short', day: 'numeric', hour: 'numeric' })}. Solid line: forecast total height; dashed: largest swell train (period and direction of that train marked along the bottom). Black: measured.`;
+    cap.textContent = `${fc.model}, run of ${fmt(Date.parse(fc.cycle), tz, { month: 'short', day: 'numeric', hour: 'numeric' })}. Solid line: forecast total height; dashed: largest swell train (its period and direction, in degrees, marked along the bottom). Black: measured.`;
     el.replaceChildren(tabs, chart, cap);
     const b = buoys.find((q) => q.id === el.__sel) || buoys[0];
     draw(chart, fc, b.id, dash.data(b.obsId).status === 'ok' ? b.obs(dash.data(b.obsId).data) : [], tz, b.color);
