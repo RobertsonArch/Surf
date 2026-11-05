@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Angeles Point Day at a Glance</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Surf">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Source+Serif+4:opsz@8..60&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/d3.min.js"></script>
+<script src="assets/dash.js"></script>
+</head>
+<body>
+<nav class="site-nav"><a href="./">Home</a><a href="ap.html" aria-current="page">Angeles Point</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
+<style>
+  .ap { font-family: var(--font-anthropic-sans); display: grid; gap: var(--cds-gap-lg); max-width: 72rem; margin-inline: auto; }
+  .ap-eyebrow { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); letter-spacing: .06em; text-transform: uppercase; margin: 0 0 var(--cds-gap-xs); }
+  .ap-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.35); line-height: 1.1; margin: 0; }
+  .ap-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .ap-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+  .ap-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
+  .ap-card > .ap-note { margin-bottom: var(--cds-gap-md); }
+  .ap-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0 0 var(--cds-gap-xs); }
+
+  /* Hero */
+  .ap-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--cds-gap-lg); align-items: stretch; }
+  .ap-hero-main { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+  .ap-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); min-height: 1.6em; }
+  .ap-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .ap-chip.is-now { color: var(--color-ok); border-color: currentColor; }
+  .ap-chip.is-next { color: var(--color-fg); }
+  .ap-hero-time { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.6); line-height: 1.05; font-variant-numeric: tabular-nums; min-height: 1.05em; }
+  .ap-hero-buoys { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: var(--cds-gap-lg); }
+  .ap-hero-buoys .ap-hero-time { font-size: var(--cds-font-size-title); margin: 2px 0; }
+  .ap-hero-buoys .ap-sub { margin: 0; }
+  .ap-hero-rule { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .ap-pills { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); margin-top: var(--cds-gap-xs); min-height: 1.8em; }
+  .ap-pill { font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--color-ok); color: var(--color-ok); white-space: nowrap; }
+  .ap-pill.best { background: var(--color-ok); color: var(--color-bg); }
+  .ap-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ap-legend span::before { content: ""; display: inline-block; width: 18px; height: 8px; border-radius: 4px; margin-right: 6px; vertical-align: middle; border: 1px solid var(--color-ok); }
+  .ap-legend .lg-best::before { background: var(--color-ok); }
+  .ap-stats { display: grid; gap: var(--cds-gap-md); align-content: start; }
+  .ap-stat { display: grid; grid-template-columns: 6.5rem 1fr; gap: var(--cds-gap-sm); align-items: baseline; padding-bottom: var(--cds-gap-sm); border-bottom: 1px solid var(--color-border-line); }
+  .ap-stat:last-child { border-bottom: 0; padding-bottom: 0; }
+  .ap-stat dt { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .ap-stat dd { margin: 0; font-variant-numeric: tabular-nums; min-height: 1.3em; }
+  .ap-stat dd b { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-heading); }
+  .ap .ap-stat dd b { font-weight: 400; }
+  .ap-stat dd small { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin-left: 4px; }
+
+  /* Timeline */
+  .ap-timeline { position: relative; min-height: 384px; }
+  .ap svg text { font-family: var(--font-anthropic-sans); font-size: 11px; fill: var(--color-fg-muted); }
+  .ap svg .lane { font-size: 11px; font-weight: 500; fill: var(--color-fg); }
+  .ap svg .val { fill: var(--color-fg); font-variant-numeric: tabular-nums; }
+  .ap svg .onpill { fill: var(--color-bg); font-weight: 500; }
+
+  /* Turns */
+  .ap-turns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--cds-gap-lg); }
+  .ap-list { display: grid; gap: 0; font-variant-numeric: tabular-nums; min-height: 6em; }
+  .ap-list .row { display: grid; grid-template-columns: 1.2rem 1fr auto; gap: var(--cds-gap-sm); align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--color-border-line); font-size: var(--cds-font-size-body); }
+  .ap-list .row:last-child { border-bottom: 0; }
+  .ap-list .ic { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .ap-list .mut { color: var(--color-fg-muted); }
+  .ap-list .flood .ic, .ap-list .flood .what { color: var(--color-ok); }
+  .ap-list .amt { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+
+  /* Buoys */
+  .ap-buoys { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--cds-gap-md); }
+  .ap-buoy { display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+  .ap-buoy .where { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .ap-big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.15; font-variant-numeric: tabular-nums; min-height: 1.15em; margin-top: var(--cds-gap-xs); }
+  .ap-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; min-height: 1.3em; }
+  .ap-overlay { position: relative; min-height: 240px; }
+  .ap-spark { position: relative; min-height: 96px; margin-top: var(--cds-gap-sm); }
+
+  .ap-fc { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-xs); }
+  .ap-fc:hover { color: var(--color-fg); }
+  .ap-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 2; }
+  .ap-tip .t { color: var(--cds-text-secondary); }
+  .ap-foot { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .ap-swells { display: grid; gap: 2px; margin-top: var(--cds-gap-sm); font-variant-numeric: tabular-nums; min-height: 1.3em; }
+  .ap-swells .ap-label { margin: 0 0 2px; }
+  .ap-train b { font-weight: var(--cds-font-weight-medium); }
+  .ap-train .mut { color: var(--color-fg-muted); }
+  .ap-wind { display: grid; gap: 0; }
+  .ap-wind .row { display: grid; grid-template-columns: minmax(7rem, 1.2fr) 1.4fr minmax(5rem, 1fr); gap: var(--cds-gap-sm); align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-border-line); font-variant-numeric: tabular-nums; }
+  .ap-wind .row:last-child { border-bottom: 0; }
+  .ap-wind .nm { font-weight: var(--cds-font-weight-medium); }
+  .ap-wind .nm small { display: block; font-weight: 400; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .ap-wind .spark { min-width: 0; }
+  .ap-flag { display: inline-block; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; color: var(--color-bad); margin-left: 6px; }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  [data-dash-source-state=empty] { color: transparent; }
+</style>
+
+<div class="ap">
+  <header class="ap-head" id="top">
+    <p class="ap-eyebrow">Strait of Juan de Fuca · <span data-draw="dateLine">—</span></p>
+    <h1>Angeles Point Day at a Glance</h1>
+  </header>
+
+  <section class="ap-card ap-hero" id="now">
+    <div class="ap-hero-main">
+      <span class="ap-chip is-now">Buoys now</span>
+      <div class="ap-hero-buoys">
+        <div>
+          <p class="ap-hero-rule">Angeles Point</p>
+          <div class="ap-hero-time" data-draw="apBig">—</div>
+          <p class="ap-sub" data-draw="apSub">—</p>
+        </div>
+        <div>
+          <p class="ap-hero-rule">Neah Bay</p>
+          <div class="ap-hero-time" data-draw="neahBig">—</div>
+          <p class="ap-sub" data-draw="neahSub">—</p>
+        </div>
+        <div>
+          <p class="ap-hero-rule">La Perouse Bank</p>
+          <div class="ap-hero-time" data-draw="lpBig">—</div>
+          <p class="ap-sub" data-draw="lpSub">—</p>
+        </div>
+      </div>
+    </div>
+    <dl class="ap-stats">
+      <div class="ap-stat"><dt>Next tide</dt><dd data-draw="nextTide">—</dd></div>
+      <div class="ap-stat"><dt>Next current</dt><dd data-draw="nextCurrent">—</dd></div>
+      <div class="ap-stat"><dt>Wind now</dt><dd data-draw="windNow">—</dd></div>
+      <div class="ap-stat"><dt>Daylight</dt><dd data-draw="daylight">—</dd></div>
+    </dl>
+  </section>
+
+  <section class="ap-card" id="timeline">
+    <h2>Today, hour by hour</h2>
+    <p class="ap-note">Top lane: surf windows, dark green best (flood current, tide 0–6 ft, daylight), light green workable (tide only). Tide in feet, with the 0–6 ft range shaded. Current in knots: flood (east) above the line, ebb (west) below. Wind (km/h): bars are the hourly forecast (Open-Meteo) with arrows showing which way it blows; dots are the wind measured at Port Angeles so far today. Shaded columns are daylight. Times are Washington time.</p>
+    <div class="ap-timeline" data-draw="timeline" data-source="tides currents sun windows wind">—</div>
+  </section>
+
+  <section class="ap-card" id="wind">
+    <h2>Measured wind</h2>
+    <p class="ap-note">Latest readings, with the last several hours as a line (dashed line is 10 km/h). Flagged when the wind is from the east (NE to SE) at 10 km/h or more.</p>
+    <div class="ap-wind" data-draw="windObs">—</div>
+  </section>
+
+  <section id="buoys">
+    <div class="ap-buoys">
+      <div class="ap-card ap-buoy">
+        <h2>Angeles Point</h2>
+        <div class="ap-big" data-draw="apBig">—</div>
+        <div class="ap-sub" data-draw="apSub">—</div>
+        <div class="ap-swells" data-draw="apSwells"></div>
+        <div class="ap-spark" data-draw="apSpark" data-source="ap_buoy neah_buoy lp_buoy">—</div>
+        <a class="ap-fc" href="https://cdip.ucsd.edu/m/products/?stn=248p1" target="_blank" rel="noopener">Buoy data (CDIP) ↗</a>
+        <a class="ap-fc" href="https://www.ndbc.noaa.gov/station_page.php?station=46267" target="_blank" rel="noopener">Station page (NOAA) ↗</a>
+      </div>
+      <div class="ap-card ap-buoy">
+        <h2>Neah Bay</h2>
+        <div class="ap-big" data-draw="neahBig">—</div>
+        <div class="ap-sub" data-draw="neahSub">—</div>
+        <div class="ap-swells" data-draw="neahSwells"></div>
+        <div class="ap-spark" data-draw="neahSpark" data-source="ap_buoy neah_buoy lp_buoy">—</div>
+        <a class="ap-fc" href="https://www.surfline.com/buoy-report/neah-bay-6-nm-north-of-cape-flattery-wa-traffic-separation-lighted-buoy--buoy-46087/fca9de34-3ae5-11ed-8fa4-0645d0cd777f" target="_blank" rel="noopener">Buoy report (Surfline) ↗</a>
+      </div>
+      <div class="ap-card ap-buoy">
+        <h2>La Perouse Bank</h2>
+        <div class="ap-big" data-draw="lpBig">—</div>
+        <div class="ap-sub" data-draw="lpSub">—</div>
+        <div class="ap-spark" data-draw="lpSpark" data-source="ap_buoy neah_buoy lp_buoy">—</div>
+        <a class="ap-fc" href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46206" target="_blank" rel="noopener">Model forecast for this buoy (Stormsurf) ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="ap-card" id="buoys-all">
+    <h2>Buoy Overlay</h2>
+    <p class="ap-note">Wave height (ft) at Angeles Point, Neah Bay and La Perouse Bank on one scale, over the same 24 hours.</p>
+    <div class="ap-overlay" data-draw="buoyOverlay" data-source="ap_buoy neah_buoy lp_buoy">—</div>
+  </section>
+
+  <p class="ap-foot">Tides: NOAA predictions, Port Angeles (9444090). Current: NOAA predictions for Angeles Pt., 2 mi NNE (PUG1639, near surface). Buoys and measured wind: NOAA NDBC live feeds; swell trains are split from each buoy’s wave spectrum. Wind forecast and daylight: Open-Meteo. All times are Washington (Pacific) time.</p>
+</div>
+
+<script>
+(() => {
+  const TZ = 'America/Los_Angeles';
+  const ok = (id) => dash.data(id).status === 'ok';
+  const rows = (id) => (ok(id) ? dash.data(id).data : []);
+  const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
+  const mins = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; };
+  const atMins = (at) => mins(String(at).slice(11, 16));
+  const fmtClock = (m) => { m = ((m % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = Math.round(m % 60); return `${(h + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
+  const fmtHour = (m) => { const h = Math.floor((((m % 1440) + 1440) % 1440) / 60); return `${(h + 11) % 12 + 1} ${h < 12 ? 'AM' : 'PM'}`; };
+  const localDay = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+  const today = () => { const s = rows('sun'); return (s.find((r) => r.day === localDay()) || s[0] || {}).day; };
+  const nowMin = () => mins(new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }));
+  const isToday = (d) => new Date().toLocaleDateString('en-CA', { timeZone: TZ }) === d;
+  const xOf = (at, d) => (at.slice(0, 10) < d ? -1440 : at.slice(0, 10) > d ? 1440 : 0) + atMins(at);
+  const interp = (pts, x) => {
+    if (!pts.length) return null;
+    if (x <= pts[0].x) return pts[0].v;
+    if (x >= pts[pts.length - 1].x) return pts[pts.length - 1].v;
+    const i = pts.findIndex((p) => p.x > x), a = pts[i - 1], b = pts[i], f = (x - a.x) / (b.x - a.x);
+    return a.v + (b.v - a.v) * (1 - Math.cos(Math.PI * f)) / 2;
+  };
+  const tidePts = (d) => rows('tides').map((r) => ({ x: xOf(r.at, d), v: num(r.height_ft), r })).sort((a, b) => a.x - b.x);
+  const curPts = (d) => rows('currents').map((r) => ({ x: xOf(r.at, d), v: r.type === 'Flood' ? num(r.speed_kt) : r.type === 'Ebb' ? -num(r.speed_kt) : 0, r })).sort((a, b) => a.x - b.x);
+
+  dash.calc('windows', {
+    inputs: ['tides', 'currents', 'sun'],
+    title: 'Surf windows today',
+    description: 'Daylight stretches with tide 0–6 ft (workable), and those also on a flood current (best), in 10-minute steps.',
+    fn: (tides, currents, sunRows) => {
+      const ld = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+      const sun = [sunRows.find((r) => r.day === ld) || sunRows[0]];
+      const d = sun[0].day;
+      const hm = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+      const x = (at) => (at.slice(0, 10) < d ? -1440 : at.slice(0, 10) > d ? 1440 : 0) + hm(at.slice(11, 16));
+      const curve = (pts) => (t) => {
+        if (t <= pts[0].x) return pts[0].v;
+        if (t >= pts[pts.length - 1].x) return pts[pts.length - 1].v;
+        const i = pts.findIndex((p) => p.x > t), a = pts[i - 1], b = pts[i], f = (t - a.x) / (b.x - a.x);
+        return a.v + (b.v - a.v) * (1 - Math.cos(Math.PI * f)) / 2;
+      };
+      const tide = curve(tides.map((r) => ({ x: x(r.at), v: +r.height_ft })).sort((a, b) => a.x - b.x));
+      const cur = curve(currents.map((r) => ({ x: x(r.at), v: r.type === 'Flood' ? +r.speed_kt : r.type === 'Ebb' ? -r.speed_kt : 0 })).sort((a, b) => a.x - b.x));
+      const label = (m) => { const h = Math.floor(m / 60), mm = m % 60; return `${(h + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
+      const out = [];
+      for (const tier of ['best', 'workable']) {
+        let start = null;
+        for (let t = hm(sun[0].sunrise); t <= hm(sun[0].sunset) + 10; t += 10) {
+          const good = t <= hm(sun[0].sunset) && tide(t) >= 0 && tide(t) <= 6
+            && (tier === 'workable' || cur(t) > 0);
+          if (good && start === null) start = t;
+          if (!good && start !== null) { out.push({ tier, start: label(start), end: label(t - 10), start_min: start, end_min: t - 10 }); start = null; }
+        }
+      }
+      return out.filter((r) => r.end_min > r.start_min);
+    },
+  });
+  const wins = () => (ok('windows') ? (dash.data('windows').data || []).map((r, i) => ({ ...r, i })) : []);
+
+  const mk = (tag, text, attrs = {}, cls) => {
+    const e = document.createElement(tag);
+    if (text !== undefined && text !== null) e.textContent = text;
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (cls) e.className = cls;
+    return e;
+  };
+  const cite = (src, field, where, text, tag = 'span') => mk(tag, text, { 'data-source': src, 'data-field': field, 'data-where': where });
+  const reset = (el, id) => { const s = dash.data(id).status; el.replaceChildren('—'); el.classList.toggle('dash-skeleton', s === 'loading'); };
+  const ready = (...ids) => ids.every(ok);
+  dash.draw('dateLine', (el) => {
+    if (!ok('sun')) return reset(el, 'sun');
+    el.classList.remove('dash-skeleton');
+    const d = today();
+    el.replaceChildren(d3.utcFormat('%A, %B %-d')(new Date(d + 'T12:00:00Z')));
+  });
+
+  const nextRow = (id, filter = () => true) => {
+    const d = today();
+    const list = rows(id).filter(filter).sort((a, b) => (a.at < b.at ? -1 : 1));
+    const n = isToday(d) ? nowMin() : -1;
+    return list.find((r) => r.day === d && atMins(r.at) > n) || list.filter((r) => r.day > d)[0] || null;
+  };
+  dash.draw('nextTide', (el) => {
+    if (!ready('tides', 'sun')) return reset(el, 'tides');
+    el.classList.remove('dash-skeleton');
+    const r = nextRow('tides');
+    if (!r) return el.replaceChildren('—');
+    const w = `at=${r.at}`;
+    el.replaceChildren(cite('tides', 'type', w, r.type), ' at ', cite('tides', 'time', w, r.time, 'b'), mk('small', null));
+    el.lastChild.append(cite('tides', 'height_ft', w, r.height_ft), ' ft');
+  });
+  dash.draw('nextCurrent', (el) => {
+    if (!ready('currents', 'sun')) return reset(el, 'currents');
+    el.classList.remove('dash-skeleton');
+    const r = nextRow('currents');
+    if (!r) return el.replaceChildren('—');
+    const w = `at=${r.at}`;
+    const name = r.type === 'Slack' ? 'Slack' : `Max ${r.type.toLowerCase()}`;
+    el.replaceChildren(name, ' at ', cite('currents', 'time', w, r.time, 'b'));
+    if (num(r.speed_kt) !== null) { const s = mk('small'); s.append(cite('currents', 'speed_kt', w, r.speed_kt), ' kt ', cite('currents', 'direction', w, r.direction)); el.append(s); }
+  });
+  dash.draw('daylight', (el) => {
+    if (!ok('sun')) return reset(el, 'sun');
+    el.classList.remove('dash-skeleton');
+    const r = rows('sun').find((x) => x.day === today());
+    if (!r) return el.replaceChildren('—');
+    el.replaceChildren(cite('sun', 'sunrise', `day=${r.day}`, r.sunrise, 'b'), ' – ', cite('sun', 'sunset', `day=${r.day}`, r.sunset, 'b'));
+  });
+
+  const DIRS = { N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5, SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5, W: 270, WNW: 292.5, NW: 315, NNW: 337.5 };
+  // Small arrow pointing the way the swell travels (from-direction + 180°)
+  const dirArrow = (dir) => {
+    const deg = typeof dir === 'number' ? dir : DIRS[dir];
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '-8 -8 16 16'); svg.setAttribute('width', '0.85em'); svg.setAttribute('height', '0.85em');
+    svg.setAttribute('aria-hidden', 'true'); svg.style.verticalAlign = '-0.05em';
+    if (deg === undefined) return svg;
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', 'M0,-7 L5,5 L0,2 L-5,5 Z'); p.setAttribute('transform', `rotate(${(deg + 180) % 360})`);
+    p.style.fill = 'currentColor';
+    svg.append(p);
+    return svg;
+  };
+  // Buoys
+  const latest = (id, field) => rows(id).filter((r) => num(r[field]) !== null).sort((a, b) => (a.at < b.at ? 1 : -1))[0];
+  const whenTxt = (at) => d3.utcFormat('%b %-d')(new Date(at.slice(0, 10) + 'T12:00:00Z')) + ', ' + fmtClock(atMins(at));
+  const BUOYS = [
+    { key: 'ap', id: 'ap_buoy', field: 'wave_ft', unit: 'ft', color: 0, extra: (r, w) => (r.direction ? [cite('ap_buoy', 'direction', w, r.direction), ' · '] : []) },
+    { key: 'neah', id: 'neah_buoy', field: 'wave_ft', unit: 'ft', color: 2, extra: (r, w) => (r.direction ? [cite('neah_buoy', 'direction', w, r.direction), ' ', cite('neah_buoy', 'dir_type', w, r.dir_type ?? ''), ' · '] : []) },
+    { key: 'lp', id: 'lp_buoy', field: 'wave_ft', unit: 'ft', color: 4, extra: (r, w) => (num(r.wind_kmh) !== null ? ['wind ', cite('lp_buoy', 'wind_kmh', w, r.wind_kmh), ' km/h · '] : []) },
+  ];
+  const tip = (host) => {
+    let t = host.querySelector('.ap-tip');
+    if (!t) { t = mk('div', null, {}, 'ap-tip'); t.hidden = true; host.append(t); }
+    return {
+      show(x, y, lines) {
+        t.replaceChildren(...lines.filter(Boolean).map((l, i) => mk('div', l, {}, i === 0 ? 't' : '')));
+        t.hidden = false;
+        const w = t.offsetWidth, hw = host.clientWidth;
+        t.style.left = Math.max(0, Math.min(hw - w, x - w / 2)) + 'px';
+        t.style.top = Math.max(0, y - t.offsetHeight - 8) + 'px';
+      },
+      hide() { t.hidden = true; },
+    };
+  };
+  for (const b of BUOYS) {
+    dash.draw(b.key + 'Big', (el) => {
+      if (!ok(b.id)) return reset(el, b.id);
+      el.classList.remove('dash-skeleton');
+      const r = latest(b.id, b.field);
+      if (!r) return el.replaceChildren('—');
+      el.replaceChildren(cite(b.id, b.field, `at=${r.at}`, r[b.field]), ` ${b.unit} @ `, cite(b.id, 'period_s', `at=${r.at}`, r.period_s ?? '—'), ' s');
+      if (r.direction) el.append(' ', dirArrow(r.direction));
+    });
+    dash.draw(b.key + 'Sub', (el) => {
+      if (!ok(b.id)) return reset(el, b.id);
+      el.classList.remove('dash-skeleton');
+      const r = latest(b.id, b.field);
+      if (!r) return el.replaceChildren('—');
+      el.replaceChildren(...b.extra(r, `at=${r.at}`), whenTxt(r.at));
+    });
+    dash.draw(b.key + 'Spark', (el) => {
+      if (!BUOYS.every((bb) => ok(bb.id))) { const ld = BUOYS.some((bb) => dash.data(bb.id).status === 'loading'); el.replaceChildren(ld ? '' : '—'); el.classList.toggle('dash-skeleton', ld); return; }
+      el.classList.remove('dash-skeleton');
+      const pt = (at) => Date.UTC(+at.slice(0, 4), +at.slice(5, 7) - 1, +at.slice(8, 10), +at.slice(11, 13), +at.slice(14, 16));
+      const t1 = d3.max(BUOYS.flatMap((bb) => rows(bb.id).filter((r) => num(r[bb.field]) !== null).map((r) => pt(r.at)))), t0 = t1 - 24 * 3600e3;
+      const data = rows(b.id).map((r) => ({ ...r, t: pt(r.at), v: num(r[b.field]) })).filter((r) => r.v !== null && r.t >= t0).sort((a, z) => a.t - z.t);
+      if (data.length < 2) return el.replaceChildren('—');
+      const W = Math.max(200, el.clientWidth), H = 96, m = { t: 8, r: 6, b: 16, l: 34 };
+      el.replaceChildren();
+      const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Wave height over the last day');
+      const x = d3.scaleUtc([t0, t1], [m.l, W - m.r]);
+      const y = d3.scaleLinear([0, d3.max(data, (d) => d.v) * 1.15 || 1], [H - m.b, m.t]).nice();
+      y.ticks(3).forEach((tk) => {
+        svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(tk)).attr('y2', y(tk)).attr('stroke', 'var(--cds-chart-grid)');
+        svg.append('text').attr('x', m.l - 6).attr('y', y(tk)).attr('dy', '0.32em').attr('text-anchor', 'end').text(`${tk} ${b.unit}`);
+      });
+      const color = dash.colors[b.color];
+      const gid = 'g-' + b.key;
+      const grad = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+      [[0, .26], [.25, .16], [.5, .08], [.75, .03], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o).attr('style', `stop-color: ${color}; stop-opacity: ${a}`));
+      svg.append('path').datum(data).attr('d', d3.area((d) => x(d.t), y(0), (d) => y(d.v))).attr('fill', `url(#${gid})`);
+      svg.append('path').datum(data).attr('d', d3.line((d) => x(d.t), (d) => y(d.v))).attr('fill', 'none').style('stroke', color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      const last = data[data.length - 1];
+      svg.append('circle').attr('cx', x(last.t)).attr('cy', y(last.v)).attr('r', 3).style('fill', color);
+      [0, 0.5, 1].forEach((f, i) => {
+        const tk = new Date(t0 + f * (t1 - t0));
+        svg.append('text').attr('x', x(tk)).attr('y', H - 3).attr('text-anchor', ['start', 'middle', 'end'][i]).text(d3.utcFormat('%-I %p')(tk));
+      });
+      const tt = tip(el);
+      const bis = d3.bisector((d) => d.t).center;
+      const dot = svg.append('circle').attr('r', 3).style('fill', color).style('display', 'none');
+      svg.append('rect').attr('width', W).attr('height', H).attr('fill', 'transparent')
+        .on('pointermove', (evt) => {
+          const [px] = d3.pointer(evt);
+          const d = data[bis(data, x.invert(px))];
+          dot.attr('cx', x(d.t)).attr('cy', y(d.v)).style('display', null);
+          const [hx] = d3.pointer(evt, el);
+          tt.show(hx, y(d.v) * el.clientWidth / W, [whenTxt(d.at), `${d.v} ${b.unit} @ ${d.period_s ?? '—'} s`]);
+        })
+        .on('pointerleave', () => { tt.hide(); dot.style('display', 'none'); });
+    });
+  }
+
+  // All buoys overlaid
+  dash.draw('buoyOverlay', (el) => {
+    if (!BUOYS.every((bb) => ok(bb.id))) { const ld = BUOYS.some((bb) => dash.data(bb.id).status === 'loading'); el.replaceChildren(ld ? '' : '—'); el.classList.toggle('dash-skeleton', ld); return; }
+    el.classList.remove('dash-skeleton');
+    const pt = (at) => Date.UTC(+at.slice(0, 4), +at.slice(5, 7) - 1, +at.slice(8, 10), +at.slice(11, 13), +at.slice(14, 16));
+    const NAMES = { ap: 'Angeles Point', neah: 'Neah Bay', lp: 'La Perouse Bank' };
+    const t1 = d3.max(BUOYS.flatMap((bb) => rows(bb.id).filter((r) => num(r[bb.field]) !== null).map((r) => pt(r.at)))), t0 = t1 - 24 * 3600e3;
+    const series = BUOYS.map((bb) => ({ name: NAMES[bb.key], color: dash.colors[bb.color], data: rows(bb.id).map((r) => ({ ...r, t: pt(r.at), v: num(r[bb.field]) })).filter((r) => r.v !== null && r.t >= t0).sort((a, z) => a.t - z.t) })).filter((sr) => sr.data.length);
+    if (!series.length) return el.replaceChildren('—');
+    const W = Math.max(260, el.clientWidth), H = 240;
+    el.replaceChildren();
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Wave height at all three buoys');
+    const probe = svg.append('text').text('');
+    const labels = series.map((sr) => { const l = sr.data[sr.data.length - 1]; return { sr, l, text: `${sr.name} ${l.v} ft` }; });
+    const widest = d3.max(labels, (d) => { probe.text(d.text); return probe.node().getComputedTextLength(); });
+    probe.remove();
+    const narrow = W - 40 - widest < 180;
+    const m = { t: 12, r: narrow ? 10 : widest + 14, b: 24, l: 40 };
+    const x = d3.scaleUtc([t0, t1], [m.l, W - m.r]);
+    const y = d3.scaleLinear([0, d3.max(series.flatMap((sr) => sr.data), (d) => d.v) * 1.1], [H - m.b, m.t]).nice();
+    y.ticks(5).forEach((tk) => {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(tk)).attr('y2', y(tk)).attr('stroke', 'var(--cds-chart-grid)');
+      svg.append('text').attr('x', m.l - 6).attr('y', y(tk)).attr('dy', '0.32em').attr('text-anchor', 'end').text(`${tk} ft`);
+    });
+    [0, 0.25, 0.5, 0.75, 1].forEach((f, i) => {
+      if (narrow && i % 2) return;
+      const tk = new Date(t0 + f * (t1 - t0));
+      svg.append('text').attr('x', x(tk)).attr('y', H - 6).attr('text-anchor', f === 0 ? 'start' : f === 1 ? 'end' : 'middle').text(d3.utcFormat('%-I %p')(tk));
+    });
+    series.forEach((sr) => {
+      svg.append('path').datum(sr.data).attr('d', d3.line((d) => x(d.t), (d) => y(d.v))).attr('fill', 'none').style('stroke', sr.color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      const l = sr.data[sr.data.length - 1];
+      svg.append('circle').attr('cx', x(l.t)).attr('cy', y(l.v)).attr('r', 3.5).style('fill', sr.color);
+    });
+    const pos = labels.map((d) => ({ ...d, y: y(d.l.v) })).sort((a, z) => a.y - z.y);
+    for (let i = 1; i < pos.length; i++) if (pos[i].y - pos[i - 1].y < 14) pos[i].y = pos[i - 1].y + 14;
+    pos.forEach((d, i) => {
+      if (narrow) svg.append('text').attr('class', 'val').attr('x', W - m.r).attr('y', m.t + 4 + i * 14).attr('dy', '0.32em').attr('text-anchor', 'end').style('fill', d.sr.color).text(d.text);
+      else svg.append('text').attr('class', 'val').attr('x', x(d.l.t) + 8).attr('y', d.y).attr('dy', '0.32em').style('fill', d.sr.color).text(d.text);
+    });
+    const tt = tip(el);
+    const times = [...new Set(series.flatMap((sr) => sr.data.map((d) => d.t)))].sort((a, z) => a - z);
+    const guide = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).attr('stroke', 'var(--cds-chart-reference)').style('display', 'none');
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+      .on('pointermove', (evt) => {
+        const [px] = d3.pointer(evt);
+        const t = times[d3.bisector((d) => d).center(times, x.invert(px))];
+        guide.attr('x1', x(t)).attr('x2', x(t)).style('display', null);
+        const lines = [whenTxt(new Date(t).toISOString().slice(0, 16))];
+        let top = H;
+        series.forEach((sr) => {
+          const d = sr.data.reduce((a, c) => (Math.abs(c.t - t) < Math.abs(a.t - t) ? c : a), sr.data[0]);
+          if (Math.abs(d.t - t) <= 45 * 60e3) { lines.push(`${sr.name}: ${d.v} ft @ ${d.period_s ?? '—'} s`); top = Math.min(top, y(d.v)); }
+        });
+        const [hx] = d3.pointer(evt, el);
+        tt.show(hx, top * el.clientWidth / W, lines);
+      })
+      .on('pointerleave', () => { tt.hide(); guide.style('display', 'none'); });
+  });
+
+  // Swell trains split from the spectrum
+  const fmtUtc = (iso) => new Date(iso).toLocaleString('en-US', { timeZone: TZ, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const drawSwells = (el, name) => {
+    if (!ok('swells')) return el.replaceChildren('');
+    const s = rows('swells').find((r) => r.buoy === name);
+    if (!s || !s.trains.length) return el.replaceChildren('');
+    el.replaceChildren(mk('p', 'Swell trains', {}, 'ap-label'), ...s.trains.map((t) => {
+      const d = mk('div', null, {}, 'ap-train');
+      d.append(mk('b', `${t.height_ft} ft`), ` @ ${t.period_s} s `, mk('span', t.direction ? `${t.direction} ${t.dir_deg}° ` : '', {}, 'mut'), t.dir_deg != null ? dirArrow(t.dir_deg) : '');
+      return d;
+    }), mk('div', 'Spectrum at ' + fmtUtc(s.utc), {}, 'ap-sub'));
+  };
+  dash.draw('apSwells', (el) => drawSwells(el, 'Angeles Point'));
+  dash.draw('neahSwells', (el) => drawSwells(el, 'Neah Bay'));
+
+  // Measured wind
+  const isEast = (r) => r.dir_deg != null && r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10;
+  const windTxt = (r) => (r.wind_kmh === 0 || r.dir_deg == null ? `calm${r.gust_kmh ? `, gusts ${r.gust_kmh}` : ''}` : `${r.wind_dir} ${r.wind_kmh} km/h${r.gust_kmh != null ? `, gusts ${r.gust_kmh}` : ''}`);
+  const STATIONS = [['Port Angeles', 'Ediz Hook, ~13 km east'], ['New Dungeness', 'buoy, east of Port Angeles'], ['Neah Bay', 'buoy, west end of the Strait'], ['La Perouse Bank', 'buoy, offshore']];
+  const obsFor = (name) => rows('wind_obs').filter((r) => r.station === name).sort((a, b) => (a.at < b.at ? -1 : 1));
+  const HOURS = 8;
+  dash.draw('windNow', (el) => {
+    if (!ok('wind_obs')) return reset(el, 'wind_obs');
+    el.classList.remove('dash-skeleton');
+    const r = obsFor('Port Angeles').slice(-1)[0];
+    if (!r) return el.replaceChildren('—');
+    el.replaceChildren(mk('b', r.wind_kmh === 0 || r.dir_deg == null ? 'Calm' : `${r.wind_kmh} km/h`), mk('small', `${r.dir_deg != null && r.wind_kmh ? r.wind_dir + ' · ' : ''}Port Angeles, ${fmtClock(atMins(r.at))}`));
+    if (isEast(r)) el.append(mk('span', 'East 10+', {}, 'ap-flag'));
+  });
+  dash.draw('windObs', (el) => {
+    if (!ok('wind_obs')) return reset(el, 'wind_obs');
+    el.classList.remove('dash-skeleton');
+    el.replaceChildren();
+    const ms = (at) => Date.UTC(+at.slice(0, 4), +at.slice(5, 7) - 1, +at.slice(8, 10), +at.slice(11, 13), +at.slice(14, 16));
+    for (const [name, where] of STATIONS) {
+      const all = obsFor(name);
+      const r = all.slice(-1)[0];
+      if (!r) continue;
+      const row = mk('div', null, {}, 'row');
+      const nm = mk('div', name, {}, 'nm'); nm.append(mk('small', `${where} · ${fmtClock(atMins(r.at))}`));
+      const val = mk('div');
+      if (r.dir_deg != null && r.wind_kmh > 0) val.append(dirArrow(r.dir_deg), ' ');
+      val.append(windTxt(r));
+      if (isEast(r)) val.append(mk('span', 'East 10+', {}, 'ap-flag'));
+      const sp = mk('div', null, {}, 'spark');
+      row.append(nm, val, sp);
+      el.append(row);
+      const t1 = ms(r.at), t0 = t1 - HOURS * 3600e3;
+      const ser = all.map((o) => ({ ...o, t: ms(o.at) })).filter((o) => o.t >= t0);
+      if (ser.length < 2) continue;
+      const W = 160, H = 30;
+      const svg = d3.select(sp).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('aria-hidden', 'true').style('width', '100%').style('max-width', '160px').style('height', '30px');
+      const x = d3.scaleLinear([t0, t1], [1, W - 1]);
+      const y = d3.scaleLinear([0, Math.max(20, d3.max(ser, (o) => o.wind_kmh) || 0)], [H - 2, 3]);
+      svg.append('line').attr('x1', 0).attr('x2', W).attr('y1', y(10)).attr('y2', y(10)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '2 2');
+      svg.append('path').datum(ser).attr('d', d3.line((o) => x(o.t), (o) => y(o.wind_kmh))).attr('fill', 'none').style('stroke', isEast(r) ? 'var(--color-bad)' : dash.colors[3]).attr('stroke-width', 1.5);
+    }
+  });
+
+  // Timeline
+  dash.draw('timeline', (el) => {
+    const ids = ['tides', 'currents', 'sun', 'windows', 'wind'];
+    const win = wins();
+    if (!ready(...ids)) { const ld = ids.some((i) => dash.data(i).status === 'loading'); el.replaceChildren(ld ? '' : '—'); el.classList.toggle('dash-skeleton', ld); return; }
+    el.classList.remove('dash-skeleton');
+    const d = today();
+    const sun = rows('sun').find((r) => r.day === d);
+    const T = tidePts(d), C = curPts(d);
+    const W = Math.max(280, el.clientWidth), H = 384;
+    const narrow = W < 480;
+    const m = { l: narrow ? 30 : 64, r: 12 };
+    const band = { y: 6, h: 22 };
+    const tide = { y: 52, h: 120 };
+    const cur = { y: 200, h: 70 };
+    const wnd = { y: 298, h: 60 };
+    const bottom = wnd.y + wnd.h;
+    const x = d3.scaleLinear([0, 1440], [m.l, W - m.r]);
+    el.replaceChildren();
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Today: surf windows, tide, current and wind');
+    // daylight columns + hour grid
+    svg.append('rect').attr('x', x(mins(sun.sunrise))).attr('width', x(mins(sun.sunset)) - x(mins(sun.sunrise))).attr('y', band.y).attr('height', bottom - band.y).attr('fill', 'var(--cds-chart-grid)').attr('opacity', 0.45).attr('rx', 4);
+    d3.range(0, 1441, 180).forEach((t) => svg.append('line').attr('x1', x(t)).attr('x2', x(t)).attr('y1', tide.y).attr('y2', bottom).attr('stroke', 'var(--cds-chart-grid)'));
+    // lane labels
+    if (!narrow) {
+      svg.append('text').attr('class', 'lane').attr('x', 0).attr('y', tide.y + 10).text('Tide');
+      svg.append('text').attr('x', 0).attr('y', tide.y + 24).text('ft');
+      svg.append('text').attr('class', 'lane').attr('x', 0).attr('y', cur.y + 10).text('Current');
+      svg.append('text').attr('x', 0).attr('y', cur.y + 24).text('kt');
+      svg.append('text').attr('class', 'lane').attr('x', 0).attr('y', wnd.y + 10).text('Wind');
+      svg.append('text').attr('x', 0).attr('y', wnd.y + 24).text('km/h');
+    }
+    // windows lane
+    if (!narrow) svg.append('text').attr('class', 'lane').attr('x', 0).attr('y', band.y + band.h / 2).attr('dy', '0.32em').text('Windows');
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', band.y).attr('height', band.h).attr('rx', band.h / 2).attr('fill', 'var(--cds-chart-grid)');
+    const pill = (r, best) => {
+      const x0 = x(r.start_min), x1 = x(r.end_min);
+      svg.append('rect').attr('x', x0).attr('width', Math.max(4, x1 - x0)).attr('y', band.y).attr('height', band.h).attr('rx', band.h / 2)
+        .style('fill', 'var(--color-ok)').attr('opacity', best ? 1 : 0.3);
+      if (best && x1 - x0 > 46) svg.append('text').attr('class', 'onpill').attr('x', (x0 + x1) / 2).attr('y', band.y + band.h / 2).attr('dy', '0.32em').attr('text-anchor', 'middle').text(x1 - x0 > 150 ? `${r.start}–${r.end}` : 'Best');
+    };
+    win.filter((r) => r.tier === 'workable').forEach((r) => pill(r, false));
+    win.filter((r) => r.tier === 'best').forEach((r) => pill(r, true));
+    // tide lane
+    const tMax = Math.max(7, d3.max(T, (p) => p.v) + 0.5), tMin = Math.min(0, d3.min(T, (p) => p.v) - 0.3);
+    const yT = d3.scaleLinear([tMin, tMax], [tide.y + tide.h, tide.y]);
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', yT(6)).attr('height', yT(0) - yT(6)).style('fill', 'var(--color-ok)').attr('opacity', 0.07);
+    [0, 6].forEach((t) => {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', yT(t)).attr('y2', yT(t)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '3 3');
+      svg.append('text').attr('x', m.l - 6).attr('y', yT(t)).attr('dy', '0.32em').attr('text-anchor', 'end').text(t);
+    });
+    const tp = d3.range(0, 1441, 5).map((t) => [t, interp(T, t)]);
+    const tcol = dash.colors[1];
+    const tg = svg.append('defs').append('linearGradient').attr('id', 'ap-tide-g').attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    [[0, .26], [.25, .16], [.5, .08], [.75, .03], [1, 0]].forEach(([o, a]) => tg.append('stop').attr('offset', o).attr('style', `stop-color: ${tcol}; stop-opacity: ${a}`));
+    svg.append('path').datum(tp).attr('d', d3.area((p) => x(p[0]), yT(tMin), (p) => yT(p[1]))).attr('fill', 'url(#ap-tide-g)');
+    svg.append('path').datum(tp).attr('d', d3.line((p) => x(p[0]), (p) => yT(p[1]))).attr('fill', 'none').style('stroke', tcol).attr('stroke-width', 2.25).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+    T.filter((p) => p.r.day === d).forEach((p) => {
+      const cx = x(p.x), cy = yT(p.v);
+      svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 3.5).style('fill', tcol).style('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+      const lx = Math.max(m.l + 22, Math.min(W - m.r - 22, cx));
+      svg.append('text').attr('class', 'val').attr('x', lx).attr('y', p.r.type === 'High' ? cy - 9 : cy + 16).attr('text-anchor', 'middle').text(`${p.v} ft`);
+    });
+    // current lane
+    const cMax = Math.max(1, d3.max(C, (p) => Math.abs(p.v)));
+    const yC = d3.scaleLinear([-cMax, cMax], [cur.y + cur.h, cur.y]);
+    const cp = d3.range(0, 1441, 5).map((t) => [t, interp(C, t)]);
+    svg.append('path').datum(cp).attr('d', d3.area((p) => x(p[0]), yC(0), (p) => yC(Math.max(0, p[1])))).style('fill', 'var(--color-ok)').attr('opacity', 0.45);
+    svg.append('path').datum(cp).attr('d', d3.area((p) => x(p[0]), yC(0), (p) => yC(Math.min(0, p[1])))).style('fill', 'var(--cds-chart-muted)').attr('opacity', 0.55);
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', yC(0)).attr('y2', yC(0)).attr('stroke', 'var(--cds-chart-axis)');
+    svg.append('text').attr('x', m.l + 4).attr('y', cur.y + 4).attr('dy', '0.32em').text('flood →');
+    svg.append('text').attr('x', m.l + 4).attr('y', cur.y + cur.h - 4).text('← ebb');
+    C.filter((p) => p.r.day === d && p.r.type !== 'Slack').forEach((p) => {
+      const cx = x(p.x), cy = yC(p.v);
+      const lx = Math.max(m.l + 20, Math.min(W - m.r - 20, cx));
+      svg.append('text').attr('class', 'val').attr('x', lx).attr('y', p.v > 0 ? cy - 5 : cy + 13).attr('text-anchor', 'middle').text(`${Math.abs(p.v)} kt`);
+    });
+    // wind lane (hourly forecast)
+    const wind = rows('wind').filter((r) => r.day === d).sort((a, b) => (a.at < b.at ? -1 : 1));
+    const yV = d3.scaleLinear([0, Math.max(20, d3.max(wind, (r) => num(r.wind_kmh)) || 0)], [wnd.y + wnd.h, wnd.y + 22]);
+    const bwW = Math.max(3, Math.min(18, (x(60) - x(0)) * 0.6));
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', yV(0)).attr('y2', yV(0)).attr('stroke', 'var(--cds-chart-axis)');
+    wind.forEach((r) => {
+      const cx = x(atMins(r.at)), v = num(r.wind_kmh);
+      const col = dash.colors[3];
+      svg.append('rect').attr('x', cx - bwW / 2).attr('width', bwW).attr('y', yV(v)).attr('height', Math.max(1, yV(0) - yV(v))).attr('rx', 2).style('fill', col).attr('opacity', 0.85);
+      if (v > 0) svg.append('path').attr('d', 'M0,-6 L4,4 L0,2 L-4,4 Z').attr('transform', `translate(${cx},${yV(v) - 8}) rotate(${(num(r.dir_deg) + 180) % 360})`).style('fill', 'var(--color-fg)');
+      if (bwW >= 12) svg.append('text').attr('class', 'val').attr('x', cx).attr('y', yV(v) - 17).attr('text-anchor', 'middle').text(v);
+    });
+    // measured wind at Port Angeles (dots)
+    rows('wind_obs').filter((r) => r.station === 'Port Angeles' && r.at.slice(0, 10) === d).filter((r, i) => i % 2 === 0).forEach((r) => {
+      svg.append('circle').attr('cx', x(atMins(r.at))).attr('cy', yV(Math.min(r.wind_kmh, yV.domain()[1]))).attr('r', 1.8).style('fill', 'var(--color-fg)').attr('opacity', 0.7);
+    });
+    // time axis
+    const ticks = narrow ? [0, 360, 720, 1080, 1440] : d3.range(0, 1441, 180);
+    ticks.forEach((t) => svg.append('text').attr('x', x(t)).attr('y', H - 8).attr('text-anchor', t === 0 ? 'start' : t === 1440 ? 'end' : 'middle').text(t === 1440 ? '12 AM' : fmtHour(t)));
+    // now marker
+    if (isToday(d)) {
+      const n = nowMin();
+      svg.append('line').attr('x1', x(n)).attr('x2', x(n)).attr('y1', band.y + band.h + 4).attr('y2', bottom).style('stroke', 'var(--color-fg)').attr('stroke-width', 1.25);
+      svg.append('circle').attr('cx', x(n)).attr('cy', band.y + band.h + 4).attr('r', 3).style('fill', 'var(--color-fg)');
+      svg.append('text').attr('class', 'val').attr('x', Math.max(m.l + 14, Math.min(W - m.r - 14, x(n)))).attr('y', band.y + band.h + 16).attr('text-anchor', 'middle').text('Now');
+    }
+    // hover
+    const tt = tip(el);
+    const guide = svg.append('line').attr('y1', band.y).attr('y2', bottom).attr('stroke', 'var(--cds-chart-reference)').style('display', 'none');
+    const tdot = svg.append('circle').attr('r', 3.5).style('fill', tcol).style('display', 'none');
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', 0).attr('height', bottom).attr('fill', 'transparent')
+      .on('pointermove', (evt) => {
+        const [px] = d3.pointer(evt);
+        const t = Math.max(0, Math.min(1440, Math.round(x.invert(px) / 10) * 10));
+        guide.attr('x1', x(t)).attr('x2', x(t)).style('display', null);
+        tdot.attr('cx', x(t)).attr('cy', yT(interp(T, t))).style('display', null);
+        const c = interp(C, t);
+        const [hx] = d3.pointer(evt, el);
+        tt.show(hx, tide.y * el.clientWidth / W, [fmtClock(t), win.find((r) => r.tier === 'best' && t >= r.start_min && t <= r.end_min) ? 'Best window' : win.find((r) => t >= r.start_min && t <= r.end_min) ? 'Workable' : 'Outside windows', `Tide about ${interp(T, t).toFixed(1)} ft`, `Current about ${Math.abs(c).toFixed(1)} kt ${c > 0.05 ? 'flood' : c < -0.05 ? 'ebb' : 'slack'}`, (() => { const w = wind.find((r) => Math.abs(atMins(r.at) - t) <= 30); return w ? `Wind ${w.wind_dir} ${w.wind_kmh} km/h, gusts ${w.gust_kmh}` : ''; })()]);
+      })
+      .on('pointerleave', () => { tt.hide(); guide.style('display', 'none'); tdot.style('display', 'none'); });
+  });
+  dash.load({
+    tides: 'data/tides.json', currents: 'data/currents.json', sun: 'data/sun.json', wind: 'data/wind.json',
+    ap_buoy: 'data/ap_buoy.json', neah_buoy: 'data/neah_buoy.json', lp_buoy: 'data/lp_buoy.json',
+    swells: 'data/swells.json', wind_obs: 'data/wind_obs.json',
+  }, ['buoys', 'swells', 'wind_obs', 'tides', 'currents', 'wind']);
+})();
+</script>
+<p class="site-updated" id="updated"></p>
+</body>
+</html>

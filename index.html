@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Surf Day at a Glance</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Surf">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Source+Serif+4:opsz@8..60&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/d3.min.js"></script>
+<script src="assets/dash.js"></script>
+<style>
+  .home { max-width: 72rem; margin: 0 auto; display: grid; gap: 16px; }
+  .home h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 34px; margin: 6px 0 0; line-height: 1.1; }
+  .home .eyebrow { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+  .now { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 12px; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 16px 18px; }
+  .now .nm { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .now .big { font-family: var(--font-anthropic-serif); font-size: 24px; line-height: 1.15; font-variant-numeric: tabular-nums; min-height: 1.15em; }
+  .now .sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; min-height: 1.3em; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 12px; }
+  .tile { display: block; text-decoration: none; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 16px 18px; }
+  .tile:hover { border-color: var(--color-fg-muted); }
+  .tile h2 { font-size: var(--cds-font-size-heading); margin: 0 0 4px; font-weight: 600; }
+  .tile p { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .flag { color: var(--color-bad); font-weight: 600; }
+</style>
+</head>
+<body>
+<nav class="site-nav"><a href="./" aria-current="page">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
+<main class="home">
+  <header>
+    <p class="eyebrow">Strait of Juan de Fuca · West coast of Vancouver Island</p>
+    <h1>Surf Day at a Glance</h1>
+  </header>
+  <section class="now" aria-label="Buoys now">
+    <div><p class="nm">Angeles Point buoy</p><div class="big" data-draw="b_ap">—</div><div class="sub" data-draw="s_ap"></div></div>
+    <div><p class="nm">Neah Bay buoy</p><div class="big" data-draw="b_neah">—</div><div class="sub" data-draw="s_neah"></div></div>
+    <div><p class="nm">La Perouse Bank buoy</p><div class="big" data-draw="b_lp">—</div><div class="sub" data-draw="s_lp"></div></div>
+    <div><p class="nm">Wind at Port Angeles</p><div class="big" data-draw="b_wind">—</div><div class="sub" data-draw="s_wind"></div></div>
+  </section>
+  <section class="tiles">
+    <a class="tile" href="ap.html"><h2>Angeles Point</h2><p>Today’s surf windows, tide, current and wind, live buoys with swell trains, measured wind.</p></a>
+    <a class="tile" href="tofino.html"><h2>Tofino/Ucluelet</h2><p>Today’s tide and wind, La Perouse Bank and Neah Bay buoys.</p></a>
+    <a class="tile" href="calendar.html"><h2>Elwha calendars</h2><p>Flood-current windows with tide 0–6 ft in daylight, this month and the next five.</p></a>
+    <a class="tile" href="calculator.html"><h2>Swell calculator</h2><p>Will this swell work? Odds and size at the Elwha from the Neah Bay reading.</p></a>
+  </section>
+</main>
+<p class="site-updated" id="updated"></p>
+<script>
+(() => {
+  const ok = (id) => dash.data(id).status === 'ok';
+  const last = (id) => (ok(id) ? dash.data(id).data.slice().sort((a, b) => (a.at < b.at ? -1 : 1)).slice(-1)[0] : null);
+  const clock = (at) => { const h = +at.slice(11, 13), m = at.slice(14, 16); return `${(h + 11) % 12 + 1}:${m} ${h < 12 ? 'AM' : 'PM'}`; };
+  const big = (r) => (r ? `${r.wave_ft} ft @ ${r.period_s ?? '—'} s` : '—');
+  dash.draw('b_ap', (el) => { el.textContent = big(last('ap')); });
+  dash.draw('s_ap', (el) => { const r = last('ap'); el.textContent = r ? `${r.direction ?? ''} · ${clock(r.at)} WA` : ''; });
+  dash.draw('b_neah', (el) => { el.textContent = big(last('neah')); });
+  dash.draw('s_neah', (el) => { const r = last('neah'); el.textContent = r ? `${r.direction ?? ''} ${r.dir_type ?? ''} · ${clock(r.at)} WA` : ''; });
+  dash.draw('b_lp', (el) => { el.textContent = big(last('lp')); });
+  dash.draw('s_lp', (el) => { const r = last('lp'); el.textContent = r ? `wind ${r.wind_kmh ?? '—'} km/h · ${clock(r.at)} WA` : ''; });
+  const pa = () => (ok('wind') ? dash.data('wind').data.filter((r) => r.station === 'Port Angeles').slice(-1)[0] : null);
+  dash.draw('b_wind', (el) => { const r = pa(); el.textContent = !r ? '—' : r.wind_kmh === 0 || r.dir_deg == null ? 'Calm' : `${r.wind_dir} ${r.wind_kmh} km/h`; });
+  dash.draw('s_wind', (el) => {
+    const r = pa(); if (!r) return (el.textContent = '');
+    el.replaceChildren(`${r.gust_kmh != null ? `gusts ${r.gust_kmh} · ` : ''}${clock(r.at)} WA`);
+    if (r.dir_deg != null && r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10) { const f = document.createElement('span'); f.className = 'flag'; f.textContent = ' · East 10+'; el.append(f); }
+  });
+  dash.load({ ap: 'data/ap_buoy.json', neah: 'data/neah_buoy.json', lp: 'data/lp_buoy.json', wind: 'data/wind_obs.json' }, ['buoys', 'wind_obs']);
+})();
+</script>
+</body>
+</html>

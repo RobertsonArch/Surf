@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tofino/Ucluelet Day at a Glance</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Surf">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Source+Serif+4:opsz@8..60&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/d3.min.js"></script>
+<script src="assets/dash.js"></script>
+</head>
+<body>
+<nav class="site-nav"><a href="./">Home</a><a href="ap.html">Angeles Point</a><a href="tofino.html" aria-current="page">Tofino/Ucluelet</a><a href="calendar.html">Elwha calendars</a><a href="calculator.html">Swell calculator</a></nav>
+<style>
+  .sg { font-family: var(--font-anthropic-sans); display: grid; gap: var(--cds-gap-lg); max-width: 72rem; margin-inline: auto; }
+  .sg-eyebrow { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); letter-spacing: .06em; text-transform: uppercase; margin: 0 0 var(--cds-gap-xs); }
+  .sg-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.35); line-height: 1.1; margin: 0; }
+    .sg-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .sg-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+  .sg-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
+  .sg-card > .sg-note { margin-bottom: var(--cds-gap-md); }
+
+  .sg-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--cds-gap-lg); align-items: stretch; }
+  .sg-hero-main { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+  .sg-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); min-height: 1.6em; }
+  .sg-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .sg-chip.is-now { color: var(--color-ok); border-color: currentColor; }
+  .sg-chip.is-next { color: var(--color-fg); }
+  .sg-hero-time { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.6); line-height: 1.05; font-variant-numeric: tabular-nums; min-height: 1.05em; }
+  .sg-hero-detail { font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; margin: 0; min-height: 1.3em; }
+  .sg-hero-buoys { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: var(--cds-gap-lg); }
+  .sg-hero-buoys .sg-hero-time { font-size: var(--cds-font-size-title); margin: 2px 0; }
+  .sg-hero-rule { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .sg-pills { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); margin-top: var(--cds-gap-xs); min-height: 1.8em; }
+  .sg-pill { font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); white-space: nowrap; }
+  .sg-pill.good { border-color: var(--color-ok); color: var(--color-ok); }
+  .sg-pill.best { background: var(--color-ok); border-color: var(--color-ok); color: var(--color-bg); }
+  .sg-stats { display: grid; gap: var(--cds-gap-md); align-content: start; margin: 0; }
+  .sg-stat { display: grid; grid-template-columns: 6.5rem 1fr; gap: var(--cds-gap-sm); align-items: baseline; padding-bottom: var(--cds-gap-sm); border-bottom: 1px solid var(--color-border-line); }
+  .sg-stat:last-child { border-bottom: 0; padding-bottom: 0; }
+  .sg-stat dt { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .sg-stat dd { margin: 0; font-variant-numeric: tabular-nums; min-height: 1.3em; }
+  .sg .sg-stat dd b { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-heading); }
+  .sg-stat dd small { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin-left: 4px; }
+
+  .sg-timeline { position: relative; min-height: 290px; }
+  .sg svg text { font-family: var(--font-anthropic-sans); font-size: 11px; fill: var(--color-fg-muted); }
+  .sg svg .lane { font-weight: 500; fill: var(--color-fg); }
+  .sg svg .val { fill: var(--color-fg); font-variant-numeric: tabular-nums; }
+  .sg svg .onpill { fill: var(--color-bg); font-weight: 500; }
+
+  .sg-turns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--cds-gap-lg); }
+  .sg-list { display: grid; font-variant-numeric: tabular-nums; min-height: 6em; }
+  .sg-list .row { display: grid; grid-template-columns: 1.2rem 1fr auto; gap: var(--cds-gap-sm); align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--color-border-line); }
+  .sg-list .row:last-child { border-bottom: 0; }
+  .sg-list .ic { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .sg-list .amt { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+
+  .sg-tablewrap { container-type: inline-size; overflow-x: auto; }
+  .sg-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+  .sg-table th { text-align: left; font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); padding: 6px var(--cds-pad-xs); border-bottom: 1px solid var(--color-border-line); }
+  .sg-table td { padding: 6px var(--cds-pad-xs); border-bottom: 1px solid var(--color-border-line); }
+  .sg-table tr:last-child td { border-bottom: 0; }
+  .sg-table .num { text-align: right; }
+  @container (max-width: 30rem) { .sg-hide-narrow { display: none; } }
+  .st-ok { color: var(--color-ok); }
+  .st-warn { color: var(--color-warn); }
+  .st-bad { color: var(--color-bad); }
+
+  .sg-buoys { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--cds-gap-md); }
+  .sg-buoy { display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+  .sg-buoy .where { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .sg-big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.15; font-variant-numeric: tabular-nums; min-height: 1.15em; margin-top: var(--cds-gap-xs); }
+  .sg-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; min-height: 1.3em; }
+  .sg-overlay { position: relative; min-height: 240px; }
+  .sg-spark { position: relative; min-height: 96px; margin-top: var(--cds-gap-sm); }
+
+  .sg-fc { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-xs); }
+  .sg-fc:hover { color: var(--color-fg); }
+  .sg-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 2; }
+  .sg-tip .t { color: var(--cds-text-secondary); }
+  .sg-foot { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+  .sg-swells { display: grid; gap: 2px; margin-top: var(--cds-gap-sm); font-variant-numeric: tabular-nums; }
+  .sg-swells .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0 0 2px; }
+  .sg-swells b { font-weight: var(--cds-font-weight-medium); }
+  .sg-swells .mut { color: var(--color-fg-muted); }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  [data-dash-source-state=empty] { color: transparent; }
+</style>
+
+<div class="sg">
+  <header class="sg-head" id="top">
+    <p class="sg-eyebrow">West coast of Vancouver Island · <span data-draw="dateLine">—</span></p>
+    <h1>Tofino/Ucluelet Day at a Glance</h1>
+  </header>
+
+  <section class="sg-card sg-hero" id="now">
+    <div class="sg-hero-main">
+      <span class="sg-chip is-now">Buoys now</span>
+      <div class="sg-hero-buoys">
+        <div>
+          <p class="sg-hero-rule">La Perouse Bank</p>
+          <div class="sg-hero-time" data-draw="lpBig">—</div>
+          <p class="sg-hero-detail sg-sub" data-draw="lpSub">—</p>
+        </div>
+        <div>
+          <p class="sg-hero-rule">Neah Bay</p>
+          <div class="sg-hero-time" data-draw="neahBig">—</div>
+          <p class="sg-hero-detail sg-sub" data-draw="neahSub">—</p>
+        </div>
+      </div>
+    </div>
+    <dl class="sg-stats">
+      <div class="sg-stat"><dt>Next tide</dt><dd data-draw="nextTide">—</dd></div>
+      <div class="sg-stat"><dt>Daylight</dt><dd data-draw="daylight">—</dd></div>
+    </dl>
+  </section>
+
+  <section class="sg-card" id="timeline">
+    <h2>Today at Tofino: tide and wind</h2>
+    <p class="sg-note">Tide in feet. Wind (km/h) is the hourly forecast from Open-Meteo, with arrows showing which way it blows. Shaded columns are daylight.</p>
+    <div class="sg-timeline" data-draw="timeline" data-source="tofino tides sun">—</div>
+  </section>
+
+  <section id="buoys">
+    <div class="sg-buoys">
+      <div class="sg-card sg-buoy">
+        <h2>La Perouse Bank</h2>
+        <div class="sg-big" data-draw="lpBig">—</div>
+        <div class="sg-sub" data-draw="lpSub">—</div>
+        <div class="sg-spark" data-draw="lpSpark" data-source="buoy">—</div>
+        <a class="sg-fc" href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46206" target="_blank" rel="noopener">Model forecast for this buoy (Stormsurf) ↗</a>
+      </div>
+      <div class="sg-card sg-buoy">
+        <h2>Neah Bay</h2>
+        <div class="sg-big" data-draw="neahBig">—</div>
+        <div class="sg-sub" data-draw="neahSub">—</div>
+        <div class="sg-swells" data-draw="neahSwells"></div>
+        <div class="sg-spark" data-draw="neahSpark" data-source="buoy">—</div>
+        <a class="sg-fc" href="https://www.surfline.com/buoy-report/neah-bay-6-nm-north-of-cape-flattery-wa-traffic-separation-lighted-buoy--buoy-46087/fca9de34-3ae5-11ed-8fa4-0645d0cd777f" target="_blank" rel="noopener">Buoy report (Surfline) ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-card" id="buoys-all">
+    <h2>Buoy Overlay</h2>
+    <p class="sg-note">Wave height (ft) at La Perouse Bank and Neah Bay on one scale, over the same 24 hours.</p>
+    <div class="sg-overlay" data-draw="buoyOverlay" data-source="buoy">—</div>
+  </section>
+
+  <p class="sg-foot">Tides: Fisheries and Oceans Canada predictions for Tofino (chart datum). Wind forecast and daylight: Open-Meteo. Buoys: NOAA NDBC live feeds (La Perouse Bank is an Environment Canada buoy relayed by NOAA). BC time.</p>
+</div>
+
+<script>
+(() => {
+  const TZ = 'America/Vancouver';
+  const ok = (id) => dash.data(id).status === 'ok';
+  const rows = (id) => (ok(id) ? dash.data(id).data : []);
+  const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
+  const mins = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; };
+  const atMins = (at) => mins(String(at).slice(11, 16));
+  const fmtClock = (m) => { m = ((m % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = Math.round(m % 60); return `${(h + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
+  const fmtHour = (m) => { const h = Math.floor((((m % 1440) + 1440) % 1440) / 60); return `${(h + 11) % 12 + 1} ${h < 12 ? 'AM' : 'PM'}`; };
+  const localDay = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+  const nowMin = () => mins(new Date().toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }));
+  const days = () => [...new Set(rows('tofino').map((r) => r.day))].sort();
+  const NAMES_SW = {};
+  const selDay = () => { const d = days(); return d.includes(localDay()) ? localDay() : d[0]; };
+  const isToday = (d) => localDay() === d;
+  const stateClass = (s) => ({ glassy: 'st-ok', off: 'st-ok', 'cross-off': 'st-ok', cross: 'st-warn' }[s] || 'st-bad');
+  const stateVar = (s) => ({ glassy: '--color-ok', off: '--color-ok', 'cross-off': '--color-ok', cross: '--color-warn' }[s] || '--color-bad');
+  const xOf = (at, d) => (at.slice(0, 10) < d ? -1440 : at.slice(0, 10) > d ? 1440 : 0) + atMins(at);
+  const interp = (pts, x) => {
+    if (!pts.length) return null;
+    if (x <= pts[0].x) return pts[0].v;
+    if (x >= pts[pts.length - 1].x) return pts[pts.length - 1].v;
+    const i = pts.findIndex((p) => p.x > x), a = pts[i - 1], b = pts[i], f = (x - a.x) / (b.x - a.x);
+    return a.v + (b.v - a.v) * (1 - Math.cos(Math.PI * f)) / 2;
+  };
+
+  const mk = (tag, text, attrs = {}, cls) => {
+    const e = document.createElement(tag);
+    if (text !== undefined && text !== null) e.textContent = text;
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (cls) e.className = cls;
+    return e;
+  };
+  const cite = (src, field, where, text, tag = 'span') => mk(tag, text, { 'data-source': src, 'data-field': field, 'data-where': where });
+  const reset = (el, id) => { const s = dash.data(id).status; el.replaceChildren('—'); el.classList.toggle('dash-skeleton', s === 'loading'); };
+  const ready = (...ids) => ids.every(ok);
+
+  const daylightRows = (id) => {
+    const d = selDay();
+    const sun = rows('sun').find((r) => r.day === d);
+    const rise = sun ? mins(sun.sunrise) - 30 : 420, set = sun ? mins(sun.sunset) : 1020;
+    return rows(id).filter((r) => r.day === d && atMins(r.at) >= rise && atMins(r.at) <= set).sort((a, b) => (a.at < b.at ? -1 : 1));
+  };
+  // The slot nearest the current time (today), else the first daylight slot
+  const slotNow = (id) => {
+    const list = rows(id).filter((r) => r.day === selDay()).sort((a, b) => (a.at < b.at ? -1 : 1));
+    if (!list.length) return null;
+    if (!isToday(selDay())) return daylightRows(id)[0] || list[0];
+    const n = nowMin();
+    return list.reduce((a, c) => (Math.abs(atMins(c.at) - n) < Math.abs(atMins(a.at) - n) ? c : a), list[0]);
+  };
+
+  dash.draw('dateLine', (el) => {
+    if (!ok('tofino')) return reset(el, 'tofino');
+    el.classList.remove('dash-skeleton');
+    el.replaceChildren(d3.utcFormat('%A, %B %-d')(new Date(selDay() + 'T12:00:00Z')));
+  });
+  dash.draw('nextTide', (el) => {
+    if (!ready('tides', 'tofino')) return reset(el, 'tides');
+    el.classList.remove('dash-skeleton');
+    const d = selDay();
+    const n = isToday(d) ? nowMin() : -1;
+    const list = rows('tides').slice().sort((a, b) => (a.at < b.at ? -1 : 1));
+    const r = list.find((x) => x.day === d && atMins(x.at) > n) || list.find((x) => x.day > d);
+    if (!r) return el.replaceChildren('—');
+    const w = `at=${r.at}`;
+    const s = mk('small'); s.append(cite('tides', 'height_ft', w, r.height_ft), ' ft');
+    el.replaceChildren(cite('tides', 'type', w, r.type), ' at ', cite('tides', 'time', w, r.time, 'b'), s);
+  });
+  dash.draw('daylight', (el) => {
+    if (!ready('sun', 'tofino')) return reset(el, 'sun');
+    el.classList.remove('dash-skeleton');
+    const r = rows('sun').find((x) => x.day === selDay());
+    if (!r) return el.replaceChildren('—');
+    el.replaceChildren(cite('sun', 'sunrise', `day=${r.day}`, r.sunrise, 'b'), ' – ', cite('sun', 'sunset', `day=${r.day}`, r.sunset, 'b'));
+  });
+  const tip = (host) => {
+    let t = host.querySelector('.sg-tip');
+    if (!t) { t = mk('div', null, {}, 'sg-tip'); t.hidden = true; host.append(t); }
+    return {
+      show(x, y, lines) {
+        t.replaceChildren(...lines.filter(Boolean).map((l, i) => mk('div', l, {}, i === 0 ? 't' : '')));
+        t.hidden = false;
+        const w = t.offsetWidth, hw = host.clientWidth;
+        t.style.left = Math.max(0, Math.min(hw - w, x - w / 2)) + 'px';
+        t.style.top = Math.max(0, y - t.offsetHeight - 8) + 'px';
+      },
+      hide() { t.hidden = true; },
+    };
+  };
+
+  const DIRS = { N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5, SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5, W: 270, WNW: 292.5, NW: 315, NNW: 337.5 };
+  // Small arrow pointing the way the swell travels (from-direction + 180°)
+  const dirArrow = (dir) => {
+    const deg = typeof dir === 'number' ? dir : DIRS[dir];
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '-8 -8 16 16'); svg.setAttribute('width', '0.85em'); svg.setAttribute('height', '0.85em');
+    svg.setAttribute('aria-hidden', 'true'); svg.style.verticalAlign = '-0.05em';
+    if (deg === undefined) return svg;
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', 'M0,-7 L5,5 L0,2 L-5,5 Z'); p.setAttribute('transform', `rotate(${(deg + 180) % 360})`);
+    p.style.fill = 'currentColor';
+    svg.append(p);
+    return svg;
+  };
+  // Buoys
+  const whenTxt = (at) => d3.utcFormat('%b %-d')(new Date(at.slice(0, 10) + 'T12:00:00Z')) + ', ' + fmtClock(atMins(at));
+  const BUOYS = [{ key: 'lp', name: 'La Perouse Bank', color: 0 }, { key: 'neah', name: 'Neah Bay', color: 2 }];
+  const buoyRows = (name) => rows('buoy').filter((r) => r.buoy === name && num(r.wave_ft) !== null).sort((a, b) => (a.at < b.at ? -1 : 1));
+  for (const b of BUOYS) {
+    dash.draw(b.key + 'Big', (el) => {
+      if (!ok('buoy')) return reset(el, 'buoy');
+      el.classList.remove('dash-skeleton');
+      const r = buoyRows(b.name).slice(-1)[0];
+      if (!r) return el.replaceChildren('—');
+      const w = `buoy=${r.buoy}&at=${r.at}`;
+      el.replaceChildren(cite('buoy', 'wave_ft', w, r.wave_ft), ' ft @ ', cite('buoy', 'period_s', w, r.period_s ?? '—'), ' s');
+      if (r.swell_dir) el.append(' ', dirArrow(r.swell_dir));
+    });
+    dash.draw(b.key + 'Sub', (el) => {
+      if (!ok('buoy')) return reset(el, 'buoy');
+      el.classList.remove('dash-skeleton');
+      const r = buoyRows(b.name).slice(-1)[0];
+      if (!r) return el.replaceChildren('—');
+      const w = `buoy=${r.buoy}&at=${r.at}`;
+      const parts = [];
+      if (r.swell_dir) parts.push(cite('buoy', 'swell_dir', w, r.swell_dir), ' ', cite('buoy', 'dir_type', w, r.dir_type ?? ''), ' · ');
+      if (num(r.wind_kmh) !== null) parts.push('wind ', cite('buoy', 'wind_kmh', w, r.wind_kmh), ' km/h · ');
+      parts.push(whenTxt(r.at));
+      el.replaceChildren(...parts);
+    });
+    dash.draw(b.key + 'Spark', (el) => {
+      if (!ok('buoy')) { const ld = dash.data('buoy').status === 'loading'; el.replaceChildren(ld ? '' : '—'); el.classList.toggle('dash-skeleton', ld); return; }
+      el.classList.remove('dash-skeleton');
+      const pt = (at) => Date.UTC(+at.slice(0, 4), +at.slice(5, 7) - 1, +at.slice(8, 10), +at.slice(11, 13), +at.slice(14, 16));
+      const t1 = d3.max(rows('buoy').filter((r) => num(r.wave_ft) !== null).map((r) => pt(r.at))), t0 = t1 - 24 * 3600e3;
+      const data = buoyRows(b.name).map((r) => ({ ...r, t: pt(r.at), v: num(r.wave_ft) })).filter((r) => r.t >= t0);
+      if (data.length < 2) return el.replaceChildren('—');
+      const W = Math.max(200, el.clientWidth), H = 96, m = { t: 8, r: 6, b: 16, l: 34 };
+      el.replaceChildren();
+      const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', b.name + ' wave height over the last day');
+      const x = d3.scaleUtc([t0, t1], [m.l, W - m.r]);
+      const y = d3.scaleLinear([0, d3.max(data, (d) => d.v) * 1.15 || 1], [H - m.b, m.t]).nice();
+      y.ticks(3).forEach((tk) => {
+        svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(tk)).attr('y2', y(tk)).attr('stroke', 'var(--cds-chart-grid)');
+        svg.append('text').attr('x', m.l - 6).attr('y', y(tk)).attr('dy', '0.32em').attr('text-anchor', 'end').text(`${tk} ft`);
+      });
+      const color = dash.colors[b.color];
+      const gid = 'sg-g-' + b.key;
+      const grad = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+      [[0, .26], [.25, .16], [.5, .08], [.75, .03], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o).attr('style', `stop-color: ${color}; stop-opacity: ${a}`));
+      svg.append('path').datum(data).attr('d', d3.area((d) => x(d.t), y(0), (d) => y(d.v))).attr('fill', `url(#${gid})`);
+      svg.append('path').datum(data).attr('d', d3.line((d) => x(d.t), (d) => y(d.v))).attr('fill', 'none').style('stroke', color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      const last = data[data.length - 1];
+      svg.append('circle').attr('cx', x(last.t)).attr('cy', y(last.v)).attr('r', 3).style('fill', color);
+      [0, 0.5, 1].forEach((f, i) => {
+        const tk = new Date(t0 + f * (t1 - t0));
+        svg.append('text').attr('x', x(tk)).attr('y', H - 3).attr('text-anchor', ['start', 'middle', 'end'][i]).text(d3.utcFormat('%-I %p')(tk));
+      });
+      const tt = tip(el);
+      const bis = d3.bisector((d) => d.t).center;
+      const dot = svg.append('circle').attr('r', 3).style('fill', color).style('display', 'none');
+      svg.append('rect').attr('width', W).attr('height', H).attr('fill', 'transparent')
+        .on('pointermove', (evt) => {
+          const [px] = d3.pointer(evt);
+          const d = data[bis(data, x.invert(px))];
+          dot.attr('cx', x(d.t)).attr('cy', y(d.v)).style('display', null);
+          const [hx] = d3.pointer(evt, el);
+          tt.show(hx, y(d.v) * el.clientWidth / W, [whenTxt(d.at), `${d.v} ft @ ${d.period_s ?? '—'} s`]);
+        })
+        .on('pointerleave', () => { tt.hide(); dot.style('display', 'none'); });
+    });
+  }
+
+  // Swell trains (Neah Bay spectrum)
+  dash.draw('neahSwells', (el) => {
+    if (!ok('swells')) return el.replaceChildren('');
+    const s = rows('swells').find((r) => r.buoy === 'Neah Bay');
+    if (!s || !s.trains.length) return el.replaceChildren('');
+    const when = new Date(s.utc).toLocaleString('en-US', { timeZone: TZ, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    el.replaceChildren(mk('p', 'Swell trains', {}, 'lbl'), ...s.trains.map((t) => {
+      const d = mk('div');
+      d.append(mk('b', `${t.height_ft} ft`), ` @ ${t.period_s} s `, mk('span', t.direction ? `${t.direction} ${t.dir_deg}° ` : '', {}, 'mut'), t.dir_deg != null ? dirArrow(t.dir_deg) : '');
+      return d;
+    }), mk('div', 'Spectrum at ' + when, {}, 'sg-sub'));
+  });
+
+  // Both buoys overlaid
+  dash.draw('buoyOverlay', (el) => {
+    if (!ok('buoy')) { const ld = dash.data('buoy').status === 'loading'; el.replaceChildren(ld ? '' : '—'); el.classList.toggle('dash-skeleton', ld); return; }
+    el.classList.remove('dash-skeleton');
+    const pt = (at) => Date.UTC(+at.slice(0, 4), +at.slice(5, 7) - 1, +at.slice(8, 10), +at.slice(11, 13), +at.slice(14, 16));
+    const t1 = d3.max(rows('buoy').filter((r) => num(r.wave_ft) !== null).map((r) => pt(r.at))), t0 = t1 - 24 * 3600e3;
+    const series = BUOYS.map((bb) => ({ name: bb.name, color: dash.colors[bb.color], data: buoyRows(bb.name).map((r) => ({ ...r, t: pt(r.at), v: num(r.wave_ft) })).filter((r) => r.t >= t0) })).filter((sr) => sr.data.length);
+    if (!series.length) return el.replaceChildren('—');
+    const W = Math.max(260, el.clientWidth), H = 240;
+    el.replaceChildren();
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Wave height at both buoys');
+    const probe = svg.append('text').text('');
+    const labels = series.map((sr) => { const l = sr.data[sr.data.length - 1]; return { sr, l, text: `${sr.name} ${l.v} ft` }; });
+    const widest = d3.max(labels, (d) => { probe.text(d.text); return probe.node().getComputedTextLength(); });
+    probe.remove();
+    const narrow = W - 40 - widest < 180;
+    const m = { t: 12, r: narrow ? 10 : widest + 14, b: 24, l: 40 };
+    const x = d3.scaleUtc([t0, t1], [m.l, W - m.r]);
+    const y = d3.scaleLinear([0, d3.max(series.flatMap((sr) => sr.data), (d) => d.v) * 1.1], [H - m.b, m.t]).nice();
+    y.ticks(5).forEach((tk) => {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(tk)).attr('y2', y(tk)).attr('stroke', 'var(--cds-chart-grid)');
+      svg.append('text').attr('x', m.l - 6).attr('y', y(tk)).attr('dy', '0.32em').attr('text-anchor', 'end').text(`${tk} ft`);
+    });
+    [0, 0.25, 0.5, 0.75, 1].forEach((f, i) => {
+      if (narrow && i % 2) return;
+      const tk = new Date(t0 + f * (t1 - t0));
+      svg.append('text').attr('x', x(tk)).attr('y', H - 6).attr('text-anchor', f === 0 ? 'start' : f === 1 ? 'end' : 'middle').text(d3.utcFormat('%-I %p')(tk));
+    });
+    series.forEach((sr) => {
+      svg.append('path').datum(sr.data).attr('d', d3.line((d) => x(d.t), (d) => y(d.v))).attr('fill', 'none').style('stroke', sr.color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      const l = sr.data[sr.data.length - 1];
+      svg.append('circle').attr('cx', x(l.t)).attr('cy', y(l.v)).attr('r', 3.5).style('fill', sr.color);
+    });
+    const pos = labels.map((d) => ({ ...d, y: y(d.l.v) })).sort((a, z) => a.y - z.y);
+    for (let i = 1; i < pos.length; i++) if (pos[i].y - pos[i - 1].y < 14) pos[i].y = pos[i - 1].y + 14;
+    pos.forEach((d, i) => {
+      if (narrow) svg.append('text').attr('class', 'val').attr('x', W - m.r).attr('y', m.t + 4 + i * 14).attr('dy', '0.32em').attr('text-anchor', 'end').style('fill', d.sr.color).text(d.text);
+      else svg.append('text').attr('class', 'val').attr('x', x(d.l.t) + 8).attr('y', d.y).attr('dy', '0.32em').style('fill', d.sr.color).text(d.text);
+    });
+    const tt = tip(el);
+    const times = [...new Set(series.flatMap((sr) => sr.data.map((d) => d.t)))].sort((a, z) => a - z);
+    const guide = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).attr('stroke', 'var(--cds-chart-reference)').style('display', 'none');
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+      .on('pointermove', (evt) => {
+        const [px] = d3.pointer(evt);
+        const t = times[d3.bisector((d) => d).center(times, x.invert(px))];
+        guide.attr('x1', x(t)).attr('x2', x(t)).style('display', null);
+        const lines = [whenTxt(new Date(t).toISOString().slice(0, 16))];
+        let top = H;
+        series.forEach((sr) => {
+          const d = sr.data.reduce((a, c) => (Math.abs(c.t - t) < Math.abs(a.t - t) ? c : a), sr.data[0]);
+          if (Math.abs(d.t - t) <= 45 * 60e3) { lines.push(`${sr.name}: ${d.v} ft @ ${d.period_s ?? '—'} s`); top = Math.min(top, y(d.v)); }
+        });
+        const [hx] = d3.pointer(evt, el);
+        tt.show(hx, top * el.clientWidth / W, lines);
+      })
+      .on('pointerleave', () => { tt.hide(); guide.style('display', 'none'); });
+  });
+
+  const COMPASS = { N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5, SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5, W: 270, WNW: 292.5, NW: 315, NNW: 337.5 };
+  // Timeline
+  dash.draw('timeline', (el) => {
+    const ids = ['tofino', 'tides', 'sun'];
+    if (!ready(...ids)) { const ld = ids.some((i) => dash.data(i).status === 'loading'); el.replaceChildren(ld ? '' : '—'); el.classList.toggle('dash-skeleton', ld); return; }
+    el.classList.remove('dash-skeleton');
+    const d = selDay();
+    const sun = rows('sun').find((r) => r.day === d);
+    const wind = rows('tofino').filter((r) => r.day === d).sort((a, b) => (a.at < b.at ? -1 : 1));
+    const T = rows('tides').map((r) => ({ x: xOf(r.at, d), v: num(r.height_ft), r })).sort((a, b) => a.x - b.x);
+    const W = Math.max(280, el.clientWidth), H = 290;
+    const narrow = W < 480;
+    const m = { l: narrow ? 30 : 64, r: 12 };
+    const band = { y: 6, h: 10 };
+    const tide = { y: 40, h: 120 };
+    const wnd = { y: 188, h: 70 };
+    const bottom = wnd.y + wnd.h;
+    const x = d3.scaleLinear([0, 1440], [m.l, W - m.r]);
+    el.replaceChildren();
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Today at Tofino: tide and wind');
+    // daylight columns + hour grid
+    if (sun) svg.append('rect').attr('x', x(mins(sun.sunrise))).attr('width', x(mins(sun.sunset)) - x(mins(sun.sunrise))).attr('y', band.y).attr('height', bottom - band.y).attr('fill', 'var(--cds-chart-grid)').attr('opacity', 0.45).attr('rx', 4);
+    d3.range(0, 1441, 180).forEach((t) => svg.append('line').attr('x1', x(t)).attr('x2', x(t)).attr('y1', tide.y).attr('y2', bottom).attr('stroke', 'var(--cds-chart-grid)'));
+    // lane labels
+    if (!narrow) {
+      svg.append('text').attr('class', 'lane').attr('x', 0).attr('y', tide.y + 10).text('Tide');
+      svg.append('text').attr('x', 0).attr('y', tide.y + 24).text('ft');
+      svg.append('text').attr('class', 'lane').attr('x', 0).attr('y', wnd.y + 10).text('Wind');
+      svg.append('text').attr('x', 0).attr('y', wnd.y + 24).text('km/h');
+    }
+    // tide lane
+    const tMax = d3.max(T, (p) => p.v) + 0.8, tMin = Math.min(0, d3.min(T, (p) => p.v) - 0.5);
+    const yT = d3.scaleLinear([tMin, tMax], [tide.y + tide.h, tide.y]);
+    yT.ticks(3).forEach((t) => {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', yT(t)).attr('y2', yT(t)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '3 3');
+      svg.append('text').attr('x', m.l - 6).attr('y', yT(t)).attr('dy', '0.32em').attr('text-anchor', 'end').text(t);
+    });
+    const tp = d3.range(0, 1441, 5).map((t) => [t, interp(T, t)]);
+    const tcol = dash.colors[1];
+    const tg = svg.append('defs').append('linearGradient').attr('id', 'sg-tide-g').attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    [[0, .26], [.25, .16], [.5, .08], [.75, .03], [1, 0]].forEach(([o, a]) => tg.append('stop').attr('offset', o).attr('style', `stop-color: ${tcol}; stop-opacity: ${a}`));
+    svg.append('path').datum(tp).attr('d', d3.area((p) => x(p[0]), yT(tMin), (p) => yT(p[1]))).attr('fill', 'url(#sg-tide-g)');
+    svg.append('path').datum(tp).attr('d', d3.line((p) => x(p[0]), (p) => yT(p[1]))).attr('fill', 'none').style('stroke', tcol).attr('stroke-width', 2.25).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+    T.filter((p) => p.r.day === d).forEach((p) => {
+      const cx = x(p.x), cy = yT(p.v);
+      svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 3.5).style('fill', tcol).style('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+      const lx = Math.max(m.l + 22, Math.min(W - m.r - 22, cx));
+      svg.append('text').attr('class', 'val').attr('x', lx).attr('y', p.r.type === 'High' ? cy - 9 : cy + 16).attr('text-anchor', 'middle').text(`${p.v} ft`);
+    });
+    // wind lane (3-hourly forecast)
+    const yV = d3.scaleLinear([0, Math.max(20, d3.max(wind, (r) => num(r.wind_kmh)) || 0)], [wnd.y + wnd.h, wnd.y + 26]);
+    const bwW = Math.max(3, Math.min(18, (x(60) - x(0)) * 0.6));
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', yV(0)).attr('y2', yV(0)).attr('stroke', 'var(--cds-chart-axis)');
+    wind.forEach((r) => {
+      const cx = x(atMins(r.at)), v = num(r.wind_kmh);
+      svg.append('rect').attr('x', cx - bwW / 2).attr('width', bwW).attr('y', yV(v)).attr('height', Math.max(1, yV(0) - yV(v))).attr('rx', 2).style('fill', dash.colors[3]).attr('opacity', 0.85);
+      const deg = COMPASS[r.wind_dir];
+      if (v > 0 && deg !== undefined) svg.append('path').attr('d', 'M0,-6 L4,4 L0,2 L-4,4 Z').attr('transform', `translate(${cx},${yV(v) - 8}) rotate(${(deg + 180) % 360})`).style('fill', 'var(--color-fg)');
+      if (bwW >= 12) svg.append('text').attr('class', 'val').attr('x', cx).attr('y', yV(v) - 17).attr('text-anchor', 'middle').text(v);
+    });
+    // time axis
+    const ticks = narrow ? [0, 360, 720, 1080, 1440] : d3.range(0, 1441, 180);
+    ticks.forEach((t) => svg.append('text').attr('x', x(t)).attr('y', H - 8).attr('text-anchor', t === 0 ? 'start' : t === 1440 ? 'end' : 'middle').text(t === 1440 ? '12 AM' : fmtHour(t)));
+    // now marker
+    if (isToday(d)) {
+      const n = nowMin();
+      svg.append('line').attr('x1', x(n)).attr('x2', x(n)).attr('y1', band.y + band.h + 4).attr('y2', bottom).style('stroke', 'var(--color-fg)').attr('stroke-width', 1.25);
+      svg.append('circle').attr('cx', x(n)).attr('cy', band.y + band.h + 4).attr('r', 3).style('fill', 'var(--color-fg)');
+      svg.append('text').attr('class', 'val').attr('x', Math.max(m.l + 14, Math.min(W - m.r - 14, x(n)))).attr('y', band.y + band.h + 16).attr('text-anchor', 'middle').text('Now');
+    }
+    // hover
+    const tt = tip(el);
+    const guide = svg.append('line').attr('y1', band.y).attr('y2', bottom).attr('stroke', 'var(--cds-chart-reference)').style('display', 'none');
+    const tdot = svg.append('circle').attr('r', 3.5).style('fill', tcol).style('display', 'none');
+    svg.append('rect').attr('x', m.l).attr('width', W - m.l - m.r).attr('y', 0).attr('height', bottom).attr('fill', 'transparent')
+      .on('pointermove', (evt) => {
+        const [px] = d3.pointer(evt);
+        const t = Math.max(0, Math.min(1440, Math.round(x.invert(px) / 10) * 10));
+        guide.attr('x1', x(t)).attr('x2', x(t)).style('display', null);
+        tdot.attr('cx', x(t)).attr('cy', yT(interp(T, t))).style('display', null);
+        const w = wind.length ? wind.reduce((a, c) => (Math.abs(atMins(c.at) - t) < Math.abs(atMins(a.at) - t) ? c : a), wind[0]) : null;
+        const [hx] = d3.pointer(evt, el);
+        tt.show(hx, tide.y * el.clientWidth / W, [fmtClock(t), `Tide about ${interp(T, t).toFixed(1)} ft`, w ? `Wind ${w.wind_dir} ${w.wind_kmh} km/h, gusts ${w.gust_kmh} (${w.time})` : '']);
+      })
+      .on('pointerleave', () => { tt.hide(); guide.style('display', 'none'); tdot.style('display', 'none'); });
+  });
+  dash.load({
+    tofino: 'data/tofino_wind.json', tides: 'data/tofino_tides.json', sun: 'data/tofino_sun.json',
+    buoy: 'data/buoys.json', swells: 'data/swells.json',
+  }, ['buoys', 'swells', 'tofino_wind', 'tofino_tides']);
+})();
+</script>
+<p class="site-updated" id="updated"></p>
+</body>
+</html>
