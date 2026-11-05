@@ -22,21 +22,21 @@ window.live = (() => {
       return await r.json();
     } finally { clearTimeout(t); }
   };
-  const CO = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?units=english&time_zone=lst_ldt&format=json&application=surf_dashboard';
-  const WA = 'America/Los_Angeles', BC = 'America/Vancouver';
+  const CO = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?units=english&time_zone=gmt&format=json&application=surf_dashboard';
+  const BC = 'America/Vancouver', WA = BC; // every page shows BC time
   const range = (tz) => `&begin_date=${ymd(tz, -1).replace(/-/g, '')}&end_date=${ymd(tz, 2).replace(/-/g, '')}`;
 
   async function apTides() {
     const j = await get(`${CO}&product=predictions&station=9444090&datum=MLLW&interval=hilo${range(WA)}`);
     return j.predictions.map((p) => {
-      const at = p.t.replace(' ', 'T');
+      const at = localAt(Date.parse(p.t.replace(' ', 'T') + ':00Z'), BC);
       return { day: at.slice(0, 10), at, time: clock(+at.slice(11, 13), +at.slice(14, 16)), type: p.type === 'H' ? 'High' : 'Low', height_ft: Math.round(+p.v * 10) / 10 };
     });
   }
   async function apCurrents() {
     const j = await get(`${CO}&product=currents_predictions&station=PUG1639&bin=16&interval=MAX_SLACK${range(WA)}`);
     return j.current_predictions.cp.map((p) => {
-      const at = p.Time.replace(' ', 'T');
+      const at = localAt(Date.parse(p.Time.replace(' ', 'T') + ':00Z'), BC);
       const type = p.Type[0].toUpperCase() + p.Type.slice(1);
       const d = type === 'Flood' ? p.meanFloodDir : type === 'Ebb' ? p.meanEbbDir : null;
       return { day: at.slice(0, 10), at, time: clock(+at.slice(11, 13), +at.slice(14, 16)), type, speed_kt: type === 'Slack' ? null : Math.round(Math.abs(+p.Velocity_Major) * 10) / 10, direction: d == null ? null : compass(+d) };

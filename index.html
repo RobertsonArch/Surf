@@ -69,11 +69,11 @@
   const clock = (at) => { const h = +at.slice(11, 13), m = at.slice(14, 16); return `${(h + 11) % 12 + 1}:${m} ${h < 12 ? 'AM' : 'PM'}`; };
   const big = (r) => (r ? `${r.wave_ft} ft @ ${r.period_s ?? '—'} s` : '—');
   dash.draw('b_ap', (el) => { el.textContent = big(last('ap')); });
-  dash.draw('s_ap', (el) => { const r = last('ap'); el.textContent = r ? `${r.direction ?? ''} · ${clock(r.at)} WA` : ''; });
+  dash.draw('s_ap', (el) => { const r = last('ap'); el.textContent = r ? `${r.direction ?? ''} · ${clock(r.at)}` : ''; });
   dash.draw('b_neah', (el) => { el.textContent = big(last('neah')); });
-  dash.draw('s_neah', (el) => { const r = last('neah'); el.textContent = r ? `${r.direction ?? ''} ${r.dir_type ?? ''} · ${clock(r.at)} WA` : ''; });
+  dash.draw('s_neah', (el) => { const r = last('neah'); el.textContent = r ? `${r.direction ?? ''} ${r.dir_type ?? ''} · ${clock(r.at)}` : ''; });
   dash.draw('b_lp', (el) => { el.textContent = big(last('lp')); });
-  dash.draw('s_lp', (el) => { const r = last('lp'); el.textContent = r ? `${clock(r.at)} WA` : ''; });
+  dash.draw('s_lp', (el) => { const r = last('lp'); el.textContent = r ? `${clock(r.at)}` : ''; });
   const obs = (name) => (ok('wind') ? dash.data('wind').data.filter((r) => r.station === name).slice(-1)[0] : null);
   const tof = () => (ok('tofobs') ? dash.data('tofobs').data.slice(-1)[0] : null);
   const bcClock = (iso) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/Vancouver', hour: 'numeric', minute: '2-digit' });
@@ -85,10 +85,10 @@
   };
   for (const [k, name, strait] of [['pa', 'Port Angeles airport', true], ['neah', 'Neah Bay', true], ['lp', 'La Perouse Bank', false]]) {
     dash.draw('w_' + k, (el) => { el.textContent = windBig(obs(name)); });
-    dash.draw('ws_' + k, (el) => { const r = obs(name); windSub(el, r, r ? `${clock(r.at)} WA` : '', strait); });
+    dash.draw('ws_' + k, (el) => { const r = obs(name); windSub(el, r, r ? `${clock(r.at)}` : '', strait); });
   }
   dash.draw('w_tof', (el) => { el.textContent = windBig(tof()); });
-  dash.draw('ws_tof', (el) => { const r = tof(); windSub(el, r, r ? `${bcClock(r.utc)} BC` : '', false); });
+  dash.draw('ws_tof', (el) => { const r = tof(); windSub(el, r, r ? `${bcClock(r.utc)}` : '', false); });
   dash.load({ tofobs: 'data/tofino_obs.json', ap: 'data/ap_buoy.json', neah: 'data/neah_buoy.json', lp: 'data/lp_buoy.json', wind: 'data/wind_obs.json' }, ['buoys', 'wind_obs', 'tofino_obs']);
 })();
 </script>

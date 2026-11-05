@@ -62,7 +62,7 @@
 <nav class="site-nav"><a href="./">Home</a><a href="tofino.html">Tofino/Ucluelet</a><a href="ap.html">Elwha</a><a href="calendar.html" aria-current="page">Elwha calendars</a><a href="calculator.html">Elwha swell calculator</a></nav>
 <main class="cw">
   <header>
-    <p class="eyebrow">Elwha surf windows · Washington time</p>
+    <p class="eyebrow">Elwha surf windows · BC time</p>
     <h1 id="title">Elwha Calendar</h1>
   </header>
   <div class="pills"><span class="pill">↗ Flood current</span><span class="pill">↕ Tide 0–6 ft</span><span class="pill">☀ Daylight</span><span class="pill">≈ Wind and Neah Bay swell forecast for the next few days</span></div>
@@ -82,7 +82,7 @@
 <p class="site-updated" id="updated"></p>
 <script>
 (() => {
-  const TZ = 'America/Los_Angeles';
+  const TZ = 'America/Vancouver';
   const LAT = 48.146, LON = -123.565;
   const ok = (id) => dash.data(id).status === 'ok';
   const rows = (id) => (ok(id) ? dash.data(id).data : []);

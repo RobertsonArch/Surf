@@ -19,7 +19,7 @@ import urllib.request
 from zoneinfo import ZoneInfo
 
 TZ = ZoneInfo("America/Vancouver")      # Tofino / Ucluelet (BC)
-TZ_WA = ZoneInfo("America/Los_Angeles")  # Angeles Point (Washington)
+TZ_WA = TZ  # all pages show BC time (kept as a name for the Elwha/Strait data)
 UTC = dt.timezone.utc
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.environ.get("SURF_DATA") or os.path.join(ROOT, "data")
@@ -414,12 +414,12 @@ def latest_cycle(station="46087"):
 # ---------------------------------------------------------------- NOAA CO-OPS
 
 def coops(params, key):
-    q = {"units": "english", "time_zone": "lst_ldt", "format": "json", "application": "surf_dashboard", **params}
+    q = {"units": "english", "time_zone": "gmt", "format": "json", "application": "surf_dashboard", **params}
     return json.loads(get("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" + urllib.parse.urlencode(q), key))
 
 
 def ldt(s):
-    return dt.datetime.strptime(s, "%Y-%m-%d %H:%M").replace(tzinfo=TZ_WA)
+    return dt.datetime.strptime(s, "%Y-%m-%d %H:%M").replace(tzinfo=UTC).astimezone(TZ)
 
 
 def tides_ap(begin, end, key="coops_tides"):
@@ -610,7 +610,7 @@ def main():
         write("currents.json", currents_ap(TODAY_WA - dt.timedelta(days=1), TODAY_WA + dt.timedelta(days=2)))
 
     def ap_wind():
-        wind, sun = open_meteo(48.146, -123.565, "om_ap", "America/Los_Angeles")
+        wind, sun = open_meteo(48.146, -123.565, "om_ap", "America/Vancouver")
         write("wind.json", wind)
         write("sun.json", sun)
 
@@ -638,8 +638,9 @@ def main():
             tides += tides_ap(a, b, f"coops_tides_{y}{m:02d}")
             cur += currents_ap(a, b, f"coops_currents_{y}{m:02d}")
         dedup = lambda rows: list({r["at"]: r for r in rows}.values())
-        write("cal_tides.json", sorted(dedup(tides), key=lambda r: r["at"]))
-        write("cal_currents.json", sorted(dedup(cur), key=lambda r: r["at"]))
+        tag = lambda rows: [{**r, "tz": "America/Vancouver"} for r in rows]
+        write("cal_tides.json", tag(sorted(dedup(tides), key=lambda r: r["at"])))
+        write("cal_currents.json", tag(sorted(dedup(cur), key=lambda r: r["at"])))
 
     def hist():
         seed = "--seed" in sys.argv or not os.path.exists(os.path.join(DATA, "history", f"46087_{NOW.year - 1}.json"))
@@ -672,7 +673,8 @@ def main():
     daily = hour == 3 and NOW.minute < 10
     cal_path = os.path.join(DATA, "cal_tides.json")
     try:
-        cal_short = json.load(open(cal_path))[-1]["at"] < "2027-12-31"
+        _c = json.load(open(cal_path))
+        cal_short = _c[-1]["at"] < "2027-12-31" or _c[0].get("tz") != "America/Vancouver"
     except Exception:
         cal_short = True
     if "--calendar" in sys.argv or daily or cal_short:
