@@ -645,7 +645,12 @@ def main():
     job("tofino_obs", tofino_obs)
     hour = NOW.astimezone(TZ_WA).hour
     daily = hour == 3 and NOW.minute < 10
-    if "--calendar" in sys.argv or daily or not os.path.exists(os.path.join(DATA, "cal_tides.json")):
+    cal_path = os.path.join(DATA, "cal_tides.json")
+    try:
+        cal_short = json.load(open(cal_path))[-1]["at"] < "2027-12-31"
+    except Exception:
+        cal_short = True
+    if "--calendar" in sys.argv or daily or cal_short:
         job("calendar", calendar)
 
     meta["updated"] = NOW.isoformat(timespec="seconds")
