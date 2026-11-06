@@ -68,7 +68,7 @@ jobs:
           done
       - id: deploy
         uses: actions/deploy-pages@v4
-        timeout-minutes: 5
+        timeout-minutes: 10
 
   # GitHub's own timer only fires every 30-60 min in practice, so after each
   # update this waits out the rest of the 10 minutes and starts the next one.
