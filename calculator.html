@@ -391,7 +391,7 @@ check();
  const CDIP="https://thredds.cdip.ucsd.edu/thredds/dodsC/cdip/";
  const FILES=[{f:"realtime/248p1_rt.nc"},{f:"archive/248p1/248p1_historic.nc"}];
  const MAXD=31;
- const txt=async u=>{const r=await fetch(u,{cache:"no-cache"});if(!r.ok)throw new Error("HTTP "+r.status);return r.text()};
+ const txt=async u=>{const c=new AbortController(),k=setTimeout(()=>c.abort(),25000);const r=await fetch(u,{cache:"no-cache",signal:c.signal}).finally(()=>clearTimeout(k));if(!r.ok)throw new Error("HTTP "+r.status);return r.text()};
  const dap=t=>{const i=t.indexOf("-----"),o={};if(i<0)return o;for(const b of t.slice(i).split(/\n\s*\n/)){const L=b.split("\n").map(l=>l.trim()).filter(l=>l&&!/^-+$/.test(l));if(L.length>1)o[L[0].split("[")[0]]=L.slice(1).join(",").split(",").filter(v=>v.trim()).map(Number)}return o};
  // coarse daily index of each file, cached: lets us pull only the slice we need
  const idx=f=>f.p||(f.p=(async()=>{const n=+((await txt(CDIP+f.f+".dds")).match(/acmTime\[acmTime = (\d+)\]/)||[])[1];if(!n)throw new Error("no current data");const co=dap(await txt(`${CDIP}${f.f}.ascii?acmTime[0:144:${n-1}]`)).acmTime||[];return{n,co}})().catch(e=>{f.p=null;throw e}));
@@ -414,7 +414,7 @@ check();
  const fmtD=t=>new Intl.DateTimeFormat("en-CA",{timeZone:TZ,month:"short",day:"numeric"}).format(new Date(t));
  const fmtDT=t=>new Intl.DateTimeFormat("en-CA",{timeZone:TZ,month:"short",day:"numeric",hour:"numeric",minute:"2-digit",hourCycle:"h23"}).format(new Date(t));
  const midnight=d=>{const t=Date.parse(d+"T08:00:00Z");return t-localHour(t)*3600e3};
- let last=null;
+ let last=null,seq=0;
  function draw(){const el=$("cc-chart");if(!last){el.innerHTML="";return}
   const {P,M,t0,t1}=last,W=Math.max(320,el.clientWidth||700),Hh=Math.round(Math.min(320,Math.max(220,W*0.42))),L=34,R=8,T=10,B=24;
   const all=[...P.map(p=>p.v),...M.map(m=>m.v)];const ym=Math.max(1,Math.ceil(Math.max(...all.map(Math.abs))*2)/2);
@@ -437,8 +437,8 @@ check();
  async function run(){let from=$("cc-from").value,to=$("cc-to").value;const st=$("cc-status");if(!from||!to)return;if(to<from)[from,to]=[to,from];
   if((Date.parse(to)-Date.parse(from))/864e5+1>MAXD){from=shift(to,-(MAXD-1));$("cc-from").value=from}
   const t0=midnight(from),t1=Math.min(midnight(shift(to,1)),Date.now()+2*3600e3);
-  const btn=$("cc-go");btn.disabled=true;st.className="status";st.textContent=`Loading NOAA predictions and buoy readings for ${from}${to!==from?" to "+to:""}…`;
-  try{const [pr,ms]=await Promise.all([predicted(from,to),measured(t0-3600e3,t1+3600e3)]);
+  const my=++seq;const btn=$("cc-go");btn.disabled=true;st.className="status";st.textContent=`Loading NOAA predictions and buoy readings for ${from}${to!==from?" to "+to:""}…`;
+  try{const [pr,ms]=await Promise.all([predicted(from,to),measured(t0-3600e3,t1+3600e3)]);if(my!==seq)return;
    const P=pr.rows.filter(r=>r.t>=t0&&r.t<=t1),M=ms.map(r=>({...r,v:signed(r,pr.fd,pr.ed)})).filter(r=>r.t>=t0&&r.t<=t1);
    last={P,M,t0,t1};draw();
    const notes=[];
@@ -453,8 +453,8 @@ check();
    notes.push(`Strongest: NOAA ${pk(P).toFixed(1)} kt, buoy ${pk(M).toFixed(1)} kt along the flood/ebb line, ${Math.max(...M.map(m=>m.kt)).toFixed(1)} kt in any direction.`);
    $("cc-notes").innerHTML=notes.map(n=>`<li>${n}</li>`).join("");
    st.textContent=`${M.length} buoy readings (every 10 min) and ${P.length} NOAA predictions (every 30 min), BC time.`;
-  }catch(e){st.className="status err";st.textContent="Couldn’t load the data ("+(e.message||e.code||"error")+")."}
-  btn.disabled=false}
+  }catch(e){if(my!==seq)return;st.className="status err";st.textContent="Couldn’t load the data ("+(e.name==="AbortError"?"timed out":e.message||e.code||"error")+")."}
+  finally{if(my===seq)btn.disabled=false}}
  const setRange=d=>{const to=localDate(Date.now());$("cc-to").value=to;$("cc-from").value=shift(to,-(d-1));document.querySelectorAll("#cc-quick button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.d===d)));run()};
  document.querySelectorAll("#cc-quick button").forEach(b=>b.addEventListener("click",()=>setRange(+b.dataset.d)));
  $("cc-go").addEventListener("click",()=>{document.querySelectorAll("#cc-quick button").forEach(b=>b.setAttribute("aria-pressed","false"));run()});
