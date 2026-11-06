@@ -497,8 +497,8 @@
     const a = Math.abs(v), slack = a < 0.4, trend = Math.abs(interp(pts, t + 15)) - Math.abs(interp(pts, t - 15));
     const phase = slack ? 'Slack' : v > 0 ? 'Flood' : 'Ebb';
     const next = pts.find((p) => p.x > t);
-    const ev = pts.filter((p) => p.x <= t && p.r.type !== 'Slack').pop() || next;
-    const dir = !slack && ev && ev.r.type === phase ? ev.r.direction : null;
+    const ev = [pts.filter((p) => p.x <= t).pop(), ...pts.filter((p) => p.x > t)].find((p) => p && p.r.type === phase);
+    const dir = !slack && ev ? ev.r.direction : null;
     const line = mk('div', null, {}, 'ap-train');
     line.append(mk('b', slack ? 'Slack' : `${phase} ${a.toFixed(1)} kt`), ' ', slack ? '' : mk('span', `${trend > 0 ? '↑ building' : '↓ easing'}${dir ? ' · toward ' + dir : ''}`, {}, 'mut'));
     const parts = [mk('p', 'Current now', {}, 'ap-label'), line];
