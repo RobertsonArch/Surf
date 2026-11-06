@@ -154,7 +154,7 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
     <div class="cc-chart" id="cc-chart"></div>
     <div class="legend">
       <span><i style="background:var(--cc-pred)"></i>NOAA prediction</span>
-      <span><i style="background:var(--cc-meas)"></i>Buoy measured (full speed; flood if heading nearer NOAA’s flood direction, ebb if nearer its ebb)</span>
+      <span><i style="background:var(--cc-meas)"></i>Buoy measured (full speed; flood if heading nearer NOAA’s flood direction, ebb if nearer its ebb). Dashed: gaps of up to 3 h with no good reading, filled with a straight line</span>
     </div>
     <ul class="windows" id="cc-notes"></ul>
     <p class="src">Check the source: <a href="https://tidesandcurrents.noaa.gov/noaacurrents/predictions.html?id=PUG1639_16" target="_blank" rel="noopener">NOAA current predictions, Angeles Pt. ↗</a> · <a href="https://cdip.ucsd.edu/m/products/?stn=248p1" target="_blank" rel="noopener">CDIP 248 Angeles Point buoy ↗</a></p>
@@ -424,15 +424,19 @@ check();
   for(let d=$("cc-from").value,i=0;d<=shift($("cc-to").value,1);d=shift(d,1),i++){const t=midnight(d);if(t<t0||t>t1)continue;s+=`<line x1="${x(t)}" x2="${x(t)}" y1="${T}" y2="${Hh-B}" stroke="var(--grid)"/>`;if(i%every===0&&t<t1-3600e3)s+=`<text x="${x(t)+3}" y="${Hh-8}" font-size="10" fill="var(--muted)">${fmtD(t)}</text>`}
   const path=(rows,gap)=>{let d="",prev=null;for(const r of rows){d+=(prev&&r.t-prev.t<=gap?"L":"M")+x(r.t).toFixed(1)+","+y(r.v).toFixed(1);prev=r}return d};
   s+=`<path d="${path(P,3*3600e3)}" fill="none" stroke="var(--cc-pred)" stroke-width="2"/>`;
-  s+=`<path d="${path(M,40*60e3)}" fill="none" stroke="var(--cc-meas)" stroke-width="1.6"/>`;
+  // buoy: solid where readings are 10–20 min apart; gaps up to 3 h (flagged or missing readings) are filled with a straight dashed line
+  const GAP=20*60e3,FILL=3*3600e3;let fill="";for(let i=1;i<M.length;i++){const a=M[i-1],b=M[i],g=b.t-a.t;if(g>GAP&&g<=FILL)fill+=`M${x(a.t).toFixed(1)},${y(a.v).toFixed(1)}L${x(b.t).toFixed(1)},${y(b.v).toFixed(1)}`}
+  s+=`<path d="${fill}" fill="none" stroke="var(--cc-meas)" stroke-width="1.6" stroke-dasharray="3 3" opacity=".8"/>`;
+  s+=`<path d="${path(M,GAP)}" fill="none" stroke="var(--cc-meas)" stroke-width="1.6"/>`;
   s+=`<text x="${L+4}" y="${T+11}" font-size="10" fill="var(--muted)">flood ↑</text><text x="${L+4}" y="${Hh-B-5}" font-size="10" fill="var(--muted)">ebb ↓</text>`;
   s+=`<line id="cc-cur" x1="0" x2="0" y1="${T}" y2="${Hh-B}" stroke="var(--fg)" stroke-width="1" visibility="hidden"/><rect id="cc-hit" x="${L}" y="${T}" width="${W-L-R}" height="${Hh-T-B}" fill="transparent"/>`;
   el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="Predicted and measured current at Angeles Point">${s}</svg><div class="cc-tip" id="cc-tip">Tap or hover the chart for readings.</div>`;
   const svg=el.querySelector("svg"),cur=el.querySelector("#cc-cur"),tip=el.querySelector("#cc-tip");
   const move=ev=>{const r=svg.getBoundingClientRect(),px=(ev.clientX-r.left)/r.width*W;const t=t0+(px-L)/(W-L-R)*(t1-t0);cur.setAttribute("x1",px);cur.setAttribute("x2",px);cur.setAttribute("visibility","visible");
    const p=at(P,t);let m=null;for(const q of M){if(Math.abs(q.t-t)<=10*60e3&&(!m||Math.abs(q.t-t)<Math.abs(m.t-t)))m=q}
+   let mf=null;if(!m){const i=M.findIndex(q=>q.t>t);if(i>0&&M[i].t-M[i-1].t<=3*3600e3)mf=at(M,t)}
    const ph=v=>v==null?"?":Math.abs(v)<0.2?"slack":(v>0?"flood ":"ebb ")+Math.abs(v).toFixed(1)+" kt";
-   tip.textContent=`${fmtDT(t)} · NOAA ${ph(p)} · buoy ${m?`${m.kt.toFixed(1)} kt toward ${cmp((m.d+0)%360)} ${Math.round(m.d)}° (${ph(m.v)})`:"no reading"}`};
+   tip.textContent=`${fmtDT(t)} · NOAA ${ph(p)} · buoy ${!m&&mf!=null?`about ${ph(mf)} (filled gap)`:m?`${m.kt.toFixed(1)} kt toward ${cmp((m.d+0)%360)} ${Math.round(m.d)}° (${ph(m.v)})`:"no reading"}`};
   el.querySelector("#cc-hit").addEventListener("pointermove",move);el.querySelector("#cc-hit").addEventListener("pointerdown",move)}
  async function run(){let from=$("cc-from").value,to=$("cc-to").value;const st=$("cc-status");if(!from||!to)return;if(to<from)[from,to]=[to,from];
   if((Date.parse(to)-Date.parse(from))/864e5+1>MAXD){from=shift(to,-(MAXD-1));$("cc-from").value=from}
