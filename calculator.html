@@ -154,7 +154,7 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
     <div class="cc-chart" id="cc-chart"></div>
     <div class="legend">
       <span><i style="background:var(--cc-pred)"></i>NOAA prediction</span>
-      <span><i style="background:var(--cc-meas)"></i>Buoy measured (full speed; flood if heading nearer NOAA’s flood direction, ebb if nearer its ebb). Dashed: gaps of up to 3 h with no good reading, filled with a straight line</span>
+      <span><i style="background:var(--cc-meas)"></i>Buoy measured, smoothed over 30 min (full speed; flood if heading nearer NOAA’s flood direction, ebb if nearer its ebb). Dashed: gaps of up to 3 h with no good reading, filled with a straight line</span>
     </div>
     <ul class="windows" id="cc-notes"></ul>
     <p class="src">Check the source: <a href="https://tidesandcurrents.noaa.gov/noaacurrents/predictions.html?id=PUG1639_16" target="_blank" rel="noopener">NOAA current predictions, Angeles Pt. ↗</a> · <a href="https://cdip.ucsd.edu/m/products/?stn=248p1" target="_blank" rel="noopener">CDIP 248 Angeles Point buoy ↗</a></p>
@@ -436,14 +436,16 @@ check();
    const p=at(P,t);let m=null;for(const q of M){if(Math.abs(q.t-t)<=10*60e3&&(!m||Math.abs(q.t-t)<Math.abs(m.t-t)))m=q}
    let mf=null;if(!m){const i=M.findIndex(q=>q.t>t);if(i>0&&M[i].t-M[i-1].t<=3*3600e3)mf=at(M,t)}
    const ph=v=>v==null?"?":Math.abs(v)<0.2?"slack":(v>0?"flood ":"ebb ")+Math.abs(v).toFixed(1)+" kt";
-   tip.textContent=`${fmtDT(t)} · NOAA ${ph(p)} · buoy ${!m&&mf!=null?`about ${ph(mf)} (filled gap)`:m?`${m.kt.toFixed(1)} kt toward ${cmp((m.d+0)%360)} ${Math.round(m.d)}° (${ph(m.v)})`:"no reading"}`};
+   tip.textContent=`${fmtDT(t)} · NOAA ${ph(p)} · buoy ${!m&&mf!=null?`about ${ph(mf)} (filled gap)`:m?`${m.kt.toFixed(1)} kt toward ${cmp((m.d+0)%360)} ${Math.round(m.d)}° (${ph(m.raw)}; smoothed ${ph(m.v)})`:"no reading"}`};
   el.querySelector("#cc-hit").addEventListener("pointermove",move);el.querySelector("#cc-hit").addEventListener("pointerdown",move)}
  async function run(){let from=$("cc-from").value,to=$("cc-to").value;const st=$("cc-status");if(!from||!to)return;if(to<from)[from,to]=[to,from];
   if((Date.parse(to)-Date.parse(from))/864e5+1>MAXD){from=shift(to,-(MAXD-1));$("cc-from").value=from}
   const t0=midnight(from),t1=Math.min(midnight(shift(to,1)),Date.now()+2*3600e3);
   const my=++seq;const btn=$("cc-go");btn.disabled=true;st.className="status";st.textContent=`Loading NOAA predictions and buoy readings for ${from}${to!==from?" to "+to:""}…`;
   try{const [pr,ms]=await Promise.all([predicted(from,to),measured(t0-3600e3,t1+3600e3)]);if(my!==seq)return;
-   const P=pr.rows.filter(r=>r.t>=t0&&r.t<=t1),M=ms.map(r=>({...r,v:signed(r,pr.fd,pr.ed)})).filter(r=>r.t>=t0&&r.t<=t1);
+   const P=pr.rows.filter(r=>r.t>=t0&&r.t<=t1),M0=ms.map(r=>({...r,v:signed(r,pr.fd,pr.ed)}));
+   // smooth the buoy line: 30-minute centred rolling average (readings within ±15 min), keeping each raw value for the tooltip
+   const M=M0.map((r,i)=>{let s=0,n=0;for(let j=i;j>=0&&r.t-M0[j].t<=15*60e3;j--){s+=M0[j].v;n++}for(let j=i+1;j<M0.length&&M0[j].t-r.t<=15*60e3;j++){s+=M0[j].v;n++}return{...r,raw:r.v,v:s/n}}).filter(r=>r.t>=t0&&r.t<=t1);
    last={P,M,t0,t1};draw();
    const notes=[];
    if(!M.length){st.className="status err";st.textContent="No buoy current readings for those dates. The buoy record runs from April 2020, with a gap from early February to late April 2026.";$("cc-notes").innerHTML="";return}
