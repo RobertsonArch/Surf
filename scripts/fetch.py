@@ -88,6 +88,42 @@ def write(name, obj):
     os.replace(path + ".tmp", path)
 
 
+# ---------------------------------------------------------------- CDIP current meter
+
+CDIP_RT = "https://thredds.cdip.ucsd.edu/thredds/dodsC/cdip/realtime/{}_rt.nc"
+
+
+def dap_ascii(txt):
+    """Parse an OPeNDAP .ascii response into {name: [values]}."""
+    out, i = {}, txt.find("-----")
+    if i < 0:
+        return out
+    for blk in re.split(r"\n\s*\n", txt[i:]):
+        lines = [l.strip() for l in blk.splitlines() if l.strip() and not set(l.strip()) <= {"-"}]
+        if len(lines) >= 2:
+            out[lines[0].split("[")[0]] = [float(v) for v in ",".join(lines[1:]).split(",") if v.strip()]
+    return out
+
+
+def cdip_current(stn="248p1", hours=26):
+    """Measured surface current (acoustic current meter, 0.75 m deep) from a CDIP Waverider, every 10 minutes."""
+    base = CDIP_RT.format(stn)
+    n = int(re.search(r"acmTime\[acmTime = (\d+)\]", get(base + ".dds", "cdip_dds")).group(1))
+    a = max(0, n - hours * 6)
+    q = ",".join(f"{v}[{a}:1:{n - 1}]" for v in ("acmTime", "acmSpeed", "acmDirection", "acmFlagPrimary"))
+    d = dap_ascii(get(f"{base}.ascii?{q}", "cdip_acm"))
+    rows = []
+    for t, sp, di, fl in zip(d["acmTime"], d["acmSpeed"], d["acmDirection"], d["acmFlagPrimary"]):
+        if fl != 1 or sp < 0 or di < 0:  # 1 = good; skip flagged and fill values
+            continue
+        u = dt.datetime.fromtimestamp(t, UTC)
+        rows.append({"at": at_str(u, TZ_WA), "utc": u.isoformat(), "speed_kt": round(sp * 1.94384, 2),
+                     "dir_deg": round(di), "direction": compass(di)})
+    if not rows:
+        raise ValueError("no good current readings")
+    return rows
+
+
 # ---------------------------------------------------------------- NDBC
 
 def ndbc(station, ext="txt"):
@@ -677,6 +713,7 @@ def main():
     job("wind_obs", wind_measured)
     job("tides", ap_tides)
     job("currents", ap_currents)
+    job("ap_current", lambda: write("ap_current.json", cdip_current()))
     job("wind", ap_wind)
     job("tofino_wind", tofino_wind)
     job("tofino_tides", tofino_tides)

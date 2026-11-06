@@ -162,7 +162,7 @@
         <div class="ap-big" data-draw="apBig">—</div>
         <div class="ap-sub" data-draw="apSub">—</div>
         <div class="ap-swells" data-draw="apSwells"></div>
-        <div class="ap-swells" data-draw="apCurrent" data-source="currents"></div>
+        <div class="ap-swells" data-draw="apCurrent" data-source="ap_current"></div>
         <div class="ap-spark" data-draw="apSpark" data-source="ap_buoy neah_buoy lp_buoy">—</div>
         <a class="ap-fc" href="https://cdip.ucsd.edu/m/products/?stn=248p1" target="_blank" rel="noopener">Buoy data (CDIP) ↗</a>
         <a class="ap-fc" href="https://www.ndbc.noaa.gov/station_page.php?station=46267" target="_blank" rel="noopener">Station page (NOAA) ↗</a>
@@ -207,7 +207,7 @@
     <p class="src">Check the source: <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46087" target="_blank" rel="noopener">Stormsurf, Neah Bay ↗</a> · <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46206" target="_blank" rel="noopener">Stormsurf, La Perouse Bank ↗</a></p>
   </section>
 
-  <p class="ap-foot">Tides: NOAA predictions, Port Angeles (9444090). Current: NOAA predictions for Angeles Pt., 2 mi NNE (PUG1639, near surface). Buoys and measured wind: NOAA NDBC live feeds, the Port Angeles airport weather report; swell trains are split from each buoy’s wave spectrum. Wind forecast and daylight: Open-Meteo. All times are BC time.</p>
+  <p class="ap-foot">Tides: NOAA predictions, Port Angeles (9444090). Current: NOAA predictions for Angeles Pt., 2 mi NNE (PUG1639, near surface); the Angeles Point card shows the current measured at the buoy (CDIP 248 current meter, 0.75 m deep). Buoys and measured wind: NOAA NDBC live feeds, the Port Angeles airport weather report; swell trains are split from each buoy’s wave spectrum. Wind forecast and daylight: Open-Meteo. All times are BC time.</p>
 </div>
 
 <script>
@@ -488,25 +488,25 @@
     }), mk('div', 'Spectrum at ' + fmtUtc(s.utc), {}, 'ap-sub'));
   };
   dash.draw('apSwells', (el) => drawSwells(el, 'Angeles Point'));
-  // Tidal current right now at Angeles Pt. (NOAA PUG1639), eased between the predicted slacks and maxima
+  // Current measured at the Angeles Point buoy (CDIP 248 acoustic current meter, 0.75 m deep, every 10 minutes)
   const drawApCurrent = (el) => {
-    if (!ready('currents', 'sun')) return el.replaceChildren('');
-    const d = today(), pts = curPts(d), t = nowMin();
-    const v = interp(pts, t);
-    if (v == null) return el.replaceChildren('');
-    const a = Math.abs(v), slack = a < 0.4, trend = Math.abs(interp(pts, t + 15)) - Math.abs(interp(pts, t - 15));
-    const phase = slack ? 'Slack' : v > 0 ? 'Flood' : 'Ebb';
-    const next = pts.find((p) => p.x > t);
-    const ev = [pts.filter((p) => p.x <= t).pop(), ...pts.filter((p) => p.x > t)].find((p) => p && p.r.type === phase);
-    const dir = !slack && ev ? ev.r.direction : null;
+    if (!ok('ap_current')) return el.replaceChildren('');
+    const rs = rows('ap_current');
+    const r = rs[rs.length - 1];
+    if (!r) return el.replaceChildren('');
+    const w = `utc=${r.utc}`, t = Date.parse(r.utc);
+    const prev = rs.filter((x) => Date.parse(x.utc) <= t - 25 * 60e3).pop();
     const line = mk('div', null, {}, 'ap-train');
-    line.append(mk('b', slack ? 'Slack' : `${phase} ${a.toFixed(1)} kt`), ' ', slack ? '' : mk('span', `${trend > 0 ? '↑ building' : '↓ easing'}${dir ? ' · toward ' + dir : ''}`, {}, 'mut'));
-    const parts = [mk('p', 'Current now', {}, 'ap-label'), line];
-    if (next) { const w = `at=${next.r.at}`; const n = mk('div', null, {}, 'ap-sub'); n.append(next.r.type === 'Slack' ? 'Slack' : `Max ${next.r.type.toLowerCase()} ${next.r.speed_kt} kt`, ' at ', cite('currents', 'time', w, next.r.time)); parts.push(n); }
-    el.replaceChildren(...parts);
+    const b = mk('b', null); b.append(cite('ap_current', 'speed_kt', w, r.speed_kt.toFixed(1)), ' kt');
+    line.append(b, ' toward ', cite('ap_current', 'direction', w, r.direction), ' ', mk('span', `${r.dir_deg}° `, {}, 'mut'), dirArrow((r.dir_deg + 180) % 360));
+    const sub = mk('div', null, {}, 'ap-sub');
+    const parts = [];
+    if (prev) { const d = r.speed_kt - prev.speed_kt; parts.push(Math.abs(d) < 0.1 ? 'steady' : d > 0 ? '↑ building' : '↓ easing', ` (${prev.speed_kt.toFixed(1)} kt toward ${prev.direction} 30 min before) · `); }
+    sub.append(...parts, fmtUtc(r.utc));
+    const old = Date.now() - t > 90 * 60e3;
+    el.replaceChildren(mk('p', 'Current measured at the buoy', {}, 'ap-label'), line, sub, ...(old ? [mk('div', 'No reading for over 90 min', {}, 'ap-sub')] : []));
   };
   dash.draw('apCurrent', drawApCurrent);
-  setInterval(() => document.querySelectorAll('[data-draw="apCurrent"]').forEach(drawApCurrent), 5 * 60e3);
   dash.draw('neahSwells', (el) => drawSwells(el, 'Neah Bay'));
 
   // Measured wind
@@ -706,9 +706,9 @@
   dash.load({
     wave_forecast: 'data/wave_forecast.json',
     tides: 'data/tides.json', currents: 'data/currents.json', sun: 'data/sun.json', wind: 'data/wind.json',
-    ap_buoy: 'data/ap_buoy.json', neah_buoy: 'data/neah_buoy.json', lp_buoy: 'data/lp_buoy.json',
+    ap_buoy: 'data/ap_buoy.json', ap_current: 'data/ap_current.json', neah_buoy: 'data/neah_buoy.json', lp_buoy: 'data/lp_buoy.json',
     swells: 'data/swells.json', wind_obs: 'data/wind_obs.json',
-  }, ['buoys', 'swells', 'wind_obs', 'wave_forecast'], { tides: live.apTides, currents: live.apCurrents, wind: live.apWind, sun: live.apSun });
+  }, ['buoys', 'swells', 'wind_obs', 'wave_forecast', 'ap_current'], { tides: live.apTides, currents: live.apCurrents, wind: live.apWind, sun: live.apSun });
 })();
 </script>
 <p class="site-updated" id="updated"></p>
