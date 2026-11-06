@@ -47,19 +47,20 @@ td.n{font-family:var(--mono)}
   </header>
 
   <section class="panel">
-    <div class="eyebrow">Peak significant height (m) · Angeles Point (top bar) vs outside buoy (bottom bar)</div>
+    <div class="eyebrow">Peak significant height (m) and period (s) · Angeles Point (top bar) vs outside buoy (bottom bar)</div>
     <div><svg id="bars" style="display:block" role="img" aria-label="Peak wave height at Angeles Point compared with the outside buoy for the 24 biggest events"></svg></div>
     <div class="legend">
       <span><i style="background:var(--ap)"></i>Angeles Point</span>
       <span><i style="background:var(--nb)"></i>Neah Bay</span>
       <span><i style="background:var(--ce)"></i>Cape Elizabeth (stand-in)</span>
+      <span>s: peak period in seconds</span>
       <span>Share: Angeles Point peak as a percent of the outside peak</span>
       <span>Dir: swell direction at each buoy's peak, top row Angeles Point, bottom row the outside buoy. Arrows point the way the swell travels; degrees are where it comes from</span>
     </div>
   </section>
 
   <section>
-    <div class="eyebrow" style="margin-bottom:8px">Hour by hour, 12 h either side of each event (metres, UTC) · arrows (every 3–9 h, depending on event length) show swell direction, pointing the way it travels</div>
+    <div class="eyebrow" style="margin-bottom:8px">Hour by hour, 12 h either side of each event (metres, UTC) · arrows (every 3–9 h, depending on event length) show swell direction, pointing the way it travels, with the period in seconds under each</div>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -110,16 +111,16 @@ const pct=r=>Math.round(r.ah/r.rh*100);
 const arrow=(cx,cy,deg,c,sc=1,tip="")=>`<g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${(deg+180)%360}) scale(${sc})"><path d="M0,-6 L4.5,5 L0,2.2 L-4.5,5 Z" fill="${c}"/>${tip?`<title>${tip}</title>`:""}</g>`;
 
 // summary bars: one row per event, so all 24 fit on any screen (drawn at the real width, redrawn on resize)
-const drawBars=()=>{const svg=document.getElementById("bars"),W=Math.max(300,svg.parentNode.clientWidth),rowH=36,T=22,Hh=T+E.length*rowH+4,LB=74,RC=112,max=10;
+const drawBars=()=>{const svg=document.getElementById("bars"),W=Math.max(300,svg.parentNode.clientWidth),rowH=36,T=22,Hh=T+E.length*rowH+4,LB=74,RC=152,max=10;
  svg.setAttribute("viewBox",`0 0 ${W} ${Hh}`);svg.setAttribute("width",W);svg.setAttribute("height",Hh);
- const x=v=>LB+(W-LB-RC-34)*v/max;let s="";
- for(let v=0;v<=max;v+=2)s+=`<line x1="${x(v)}" x2="${x(v)}" y1="${T-4}" y2="${Hh-2}" stroke="var(--grid)"/><text x="${x(v)}" y="${T-8}" text-anchor="middle">${v}</text>`;
- s+=`<text x="${W-RC+4}" y="${T-8}">share</text><text x="${W-58}" y="${T-8}">dir</text>`;
+ const x=v=>LB+(W-LB-RC-30)*v/max;let s="";
+ const tk=x(2)-x(0)<26?5:2;for(let v=0;v<=max;v+=tk)s+=`<line x1="${x(v)}" x2="${x(v)}" y1="${T-4}" y2="${Hh-2}" stroke="var(--grid)"/><text x="${x(v)}" y="${T-8}" text-anchor="middle">${v}</text>`;
+ s+=`<text x="${W-RC+4}" y="${T-8}">s</text><text x="${W-RC+42}" y="${T-8}">share</text><text x="${W-58}" y="${T-8}">dir</text>`;
  E.forEach((r,i)=>{const y0=T+i*rowH+5,bh=12,c=ref(r).c;
   s+=`<text x="0" y="${y0+10}" style="fill:var(--fg)">${i+1}. ${fmt(r.s)}</text><text x="14" y="${y0+23}">${new Date(r.s).getUTCFullYear()}</text>`;
-  s+=`<rect x="${x(0)}" y="${y0}" width="${x(r.ah)-x(0)}" height="${bh}" fill="var(--ap)" rx="2"><title>Angeles Point ${r.ah} m</title></rect><text x="${x(r.ah)+4}" y="${y0+10}" style="fill:var(--ap)">${r.ah.toFixed(1)}</text>`;
-  s+=`<rect x="${x(0)}" y="${y0+bh+1}" width="${x(r.rh)-x(0)}" height="${bh}" fill="${c}" rx="2"><title>${ref(r).name} ${r.rh} m</title></rect><text x="${x(r.rh)+4}" y="${y0+bh+11}" style="fill:${c}">${r.rh.toFixed(1)}</text>`;
-  s+=`<text x="${W-RC+4}" y="${y0+10}" style="fill:var(--ap);font-weight:500">${pct(r)}%</text>`; // on the Angeles Point row
+  s+=`<rect x="${x(0)}" y="${y0}" width="${x(r.ah)-x(0)}" height="${bh}" fill="var(--ap)" rx="2"><title>Angeles Point ${r.ah} m</title></rect><text x="${x(r.ah)+4}" y="${y0+10}" style="fill:var(--ap)">${r.ah.toFixed(1)}</text><text x="${W-RC+4}" y="${y0+10}" style="fill:var(--ap)">${(+r.ap).toFixed(1)}</text>`;
+  s+=`<rect x="${x(0)}" y="${y0+bh+1}" width="${x(r.rh)-x(0)}" height="${bh}" fill="${c}" rx="2"><title>${ref(r).name} ${r.rh} m</title></rect><text x="${x(r.rh)+4}" y="${y0+bh+11}" style="fill:${c}">${r.rh.toFixed(1)}</text><text x="${W-RC+4}" y="${y0+bh+11}" style="fill:${c}">${(+r.rp).toFixed(1)}</text>`;
+  s+=`<text x="${W-RC+42}" y="${y0+10}" style="fill:var(--ap);font-weight:500">${pct(r)}%</text>`; // on the Angeles Point row
   s+=arrow(W-64,y0+6,r.ad,"var(--ap)",.85,`Angeles Point peak from ${r.ad}° ${compass(r.ad)}`)+`<text x="${W-54}" y="${y0+10}" style="fill:var(--ap)">${r.ad}°</text>`;
   s+=arrow(W-64,y0+bh+7,r.rd,c,.85,`${ref(r).name} peak from ${r.rd}° ${compass(r.rd)}`)+`<text x="${W-54}" y="${y0+bh+11}" style="fill:${c}">${r.rd}°</text>`;
  });
@@ -130,28 +131,30 @@ drawBars();let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(
 const grid=document.getElementById("grid");
 // hourly wave direction from the site's buoy archive: {station: {hour: deg}}
 const DIR={};
-const drawGrid=()=>{grid.innerHTML=E.map((r,i)=>{const W=320,Hh=178,L=26,R=6,T=36,B=20,n=Math.max(r.A.length,r.R.length),max=Math.ceil(Math.max(r.rh,r.ah,...r.R.filter(v=>v!=null))+0.5);
+const drawGrid=()=>{grid.innerHTML=E.map((r,i)=>{const W=320,Hh=196,L=26,R=6,T=56,B=20,n=Math.max(r.A.length,r.R.length),max=Math.ceil(Math.max(r.rh,r.ah,...r.R.filter(v=>v!=null))+0.5);
  const x=k=>L+k*(W-L-R)/(n-1), y=v=>T+(Hh-T-B)*(1-v/max);
  const path=a=>{let d="",pen=false;a.forEach((v,k)=>{if(v==null){pen=false;return}d+=(pen?"L":"M")+x(k).toFixed(1)+","+y(v).toFixed(1);pen=true});return d};
  let s="";const step=max>6?2:1;for(let v=0;v<=max;v+=step)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-4}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
  const ks=(r.s-r.k0)/H, ke=(r.e-r.k0)/H;s+=`<rect x="${x(ks)}" y="${T}" width="${Math.max(1,x(ke)-x(ks))}" height="${Hh-T-B}" fill="var(--grid)" opacity=".45"/>`;
  for(let k=0;k<n;k++){const t=r.k0+k*H;if(new Date(t).getUTCHours()===0)s+=`<text x="${x(k)}" y="${Hh-5}" text-anchor="middle">${fmt(t)}</text>`}
  // direction rows along the top, every 3 hours: Angeles Point, then Neah Bay (Cape Elizabeth isn't in the archive)
- const rowsD=[["46267","var(--ap)","AP",9]];if(r.src==="NB")rowsD.push(["46087","var(--nb)","NB",25]);
+ const rowsD=[["46267","var(--ap)","AP",8]];if(r.src==="NB")rowsD.push(["46087","var(--nb)","NB",32]);
  let any=false;
  rowsD.forEach(([st,c,lab,cy])=>{const m=DIR[st];if(!m)return;let got=false;
-  const stp=Math.max(3,Math.ceil(n/16/3)*3);for(let k=0;k<n;k+=stp){const hr=r.k0/H+k;const d=m[hr]??m[hr-1]??m[hr+1];if(d==null)continue;got=any=true;s+=arrow(x(k),cy,d,c,.72,`${lab} ${fmt(r.k0+k*H)} ${String(new Date(r.k0+k*H).getUTCHours()).padStart(2,"0")}:00 UTC · from ${d}° ${compass(d)}`)}
-  if(got)s+=`<text x="0" y="${cy+4}" style="fill:${c}">${lab}</text>`});
- if(!any)s+=`<text x="${L}" y="16">${Object.keys(DIR).length?"No hourly direction in the archive for these hours":"Loading direction…"}</text>`;
+  const stp=Math.max(3,Math.ceil(n/16/3)*3);for(let k=0;k<n;k+=stp){const hr=r.k0/H+k;const v=m[hr]??m[hr-1]??m[hr+1];if(!v)continue;const [d,pd]=v;got=any=true;const when=`${lab} ${fmt(r.k0+k*H)} ${String(new Date(r.k0+k*H).getUTCHours()).padStart(2,"0")}:00 UTC`;
+   if(d!=null)s+=arrow(x(k),cy,d,c,.72,`${when} · from ${d}° ${compass(d)}${pd?` · ${pd.toFixed(1)} s`:""}`);
+   if(pd)s+=`<text x="${x(k)}" y="${cy+16}" text-anchor="middle" style="fill:${c};font-size:9px">${Math.round(pd)}</text>`}
+  if(got)s+=`<text x="0" y="${cy+4}" style="fill:${c}">${lab}</text><text x="0" y="${cy+16}" style="fill:${c};font-size:9px">s</text>`});
+ if(!any)s+=`<text x="${L}" y="16">${Object.keys(DIR).length?"No hourly direction or period in the archive for these hours":"Loading direction…"}</text>`;
  s+=`<path d="${path(r.R)}" fill="none" stroke="${ref(r).c}" stroke-width="1.8" ${r.src==="CE"?'stroke-dasharray="5 3"':''}/>`;
  s+=`<path d="${path(r.A)}" fill="none" stroke="var(--ap)" stroke-width="2.2"/>`;
  const kp=Math.round((r.at-r.k0)/H);s+=`<circle cx="${x(kp)}" cy="${y(r.ah)}" r="3.5" fill="var(--ap)"/>`;
  return `<article class="card"><h3>${i+1}. ${range(r)}<span class="pill" style="color:${ref(r).c}">${ref(r).name}</span></h3>
   <svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Wave height and direction at Angeles Point and ${ref(r).name}, ${range(r)}">${s}</svg>
-  <div class="meta">Angeles Pt ${r.ah} m from ${r.ad}° ${compass(r.ad)} · ${ref(r).name} ${r.rh} m from ${r.rd}° ${compass(r.rd)} · ${pct(r)}%</div></article>`}).join("")};
+  <div class="meta">Angeles Pt ${r.ah} m @ ${r.ap} s from ${r.ad}° ${compass(r.ad)} · ${ref(r).name} ${r.rh} m @ ${r.rp} s from ${r.rd}° ${compass(r.rd)} · ${pct(r)}%</div></article>`}).join("")};
 drawGrid();
 (async()=>{const want=new Set();E.forEach(r=>{for(const t of [r.k0,r.e+12*H]){const yv=new Date(t).getUTCFullYear();want.add("46267_"+yv);if(r.src==="NB")want.add("46087_"+yv)}});
- await Promise.all([...want].map(async f=>{try{const j=await (await fetch(`../data/history/${f}.json`)).json();const st=f.slice(0,5);const m=DIR[st]||(DIR[st]={});for(const [h,,,d] of j)if(d!=null)m[h]=d}catch(e){}}));
+ await Promise.all([...want].map(async f=>{try{const j=await (await fetch(`../data/history/${f}.json`)).json();const st=f.slice(0,5);const m=DIR[st]||(DIR[st]={});for(const [h,,pd,d] of j)if(d!=null||pd!=null)m[h]=[d,pd==null?null:pd/10]}catch(e){}}));
  if(!Object.keys(DIR).length)DIR._none={};drawGrid()})();
 
 // table
