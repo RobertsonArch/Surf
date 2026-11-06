@@ -525,11 +525,11 @@
       const ser = all.map((o) => ({ ...o, t: ms(o.at) })).filter((o) => o.t >= t0);
       if (ser.length < 2) continue;
       // small chart: km/h on the left, clock time along the bottom (BC time; `at` is already BC clock time)
-      const W = Math.max(160, Math.round(sp.clientWidth) || 190), H = 64, L = 22, B = 14; // drawn at real pixel size so labels stay readable
+      const W = Math.max(160, Math.round(sp.clientWidth) || 190), H = 84, L = 22, B = 14, A = 20; // A: row of hourly direction arrows along the top // drawn at real pixel size so labels stay readable
       const svg = d3.select(sp).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `${name} wind, last ${HOURS} hours`).attr('width', W).attr('height', H).style('display', 'block');
       const x = d3.scaleLinear([t0, t1], [L + 2, W - 4]);
       const ymax = Math.ceil(Math.max(20, d3.max(ser, (o) => Math.max(o.wind_kmh || 0, o.gust_kmh || 0)) || 0) / 10) * 10;
-      const y = d3.scaleLinear([0, ymax], [H - B, 8]);
+      const y = d3.scaleLinear([0, ymax], [H - B, A + 8]);
       const lab = (tx, ty, t, anchor) => svg.append('text').attr('x', tx).attr('y', ty).attr('text-anchor', anchor).attr('font-size', 10).style('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums').text(t);
       const yt = ymax <= 20 ? [0, 10, 20] : ymax <= 40 ? [0, 20, ymax] : [0, ymax / 2, ymax];
       yt.forEach((v) => { svg.append('line').attr('x1', L).attr('x2', W - 2).attr('y1', y(v)).attr('y2', y(v)).attr('stroke', 'var(--cds-chart-grid)'); lab(L - 3, y(v) + 3, v, 'end'); });
@@ -539,8 +539,18 @@
         svg.append('line').attr('x1', x(t)).attr('x2', x(t)).attr('y1', H - B).attr('y2', H - B + 2).attr('stroke', 'var(--color-fg-muted)');
         lab(Math.min(W - 10, Math.max(L + 8, x(t))), H - 2, hr(t), 'middle');
       }
+      // hourly direction: the reading nearest each hour (within 30 min); arrow points where the wind is blowing to
+      for (let t = Math.ceil(t0 / 3600e3) * 3600e3; t <= t1; t += 3600e3) {
+        let best = null; for (const o of ser) if (Math.abs(o.t - t) <= 1800e3 && (!best || Math.abs(o.t - t) < Math.abs(best.t - t))) best = o;
+        if (!best) continue;
+        const ax = Math.min(W - 7, Math.max(L + 7, x(t)));
+        const g = svg.append('g').attr('transform', `translate(${ax},${A / 2})`);
+        g.append('title').text(`${hr(t)}: ${windTxt(best)}`);
+        if (best.dir_deg == null || !best.wind_kmh) { g.append('circle').attr('r', 2).style('fill', 'var(--color-fg-muted)'); continue; }
+        g.append('path').attr('d', 'M0,-7 L5,5 L0,2 L-5,5 Z').attr('transform', `rotate(${(best.dir_deg + 180) % 360})`).style('fill', isEast(best) ? 'var(--color-bad)' : 'var(--color-fg)');
+      }
       svg.append('path').datum(ser).attr('d', d3.line((o) => x(o.t), (o) => y(o.wind_kmh))).attr('fill', 'none').style('stroke', isEast(r) ? 'var(--color-bad)' : dash.colors[3]).attr('stroke-width', 1.5);
-      sp.append(mk('small', 'km/h · last 8 h', {}, 'spk-cap'));
+      sp.append(mk('small', 'km/h · arrows show hourly direction (pointing downwind)', {}, 'spk-cap'));
     }
   });
 
