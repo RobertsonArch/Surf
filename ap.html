@@ -162,6 +162,7 @@
         <div class="ap-big" data-draw="apBig">—</div>
         <div class="ap-sub" data-draw="apSub">—</div>
         <div class="ap-swells" data-draw="apSwells"></div>
+        <div class="ap-swells" data-draw="apCurrent" data-source="currents"></div>
         <div class="ap-spark" data-draw="apSpark" data-source="ap_buoy neah_buoy lp_buoy">—</div>
         <a class="ap-fc" href="https://cdip.ucsd.edu/m/products/?stn=248p1" target="_blank" rel="noopener">Buoy data (CDIP) ↗</a>
         <a class="ap-fc" href="https://www.ndbc.noaa.gov/station_page.php?station=46267" target="_blank" rel="noopener">Station page (NOAA) ↗</a>
@@ -487,6 +488,25 @@
     }), mk('div', 'Spectrum at ' + fmtUtc(s.utc), {}, 'ap-sub'));
   };
   dash.draw('apSwells', (el) => drawSwells(el, 'Angeles Point'));
+  // Tidal current right now at Angeles Pt. (NOAA PUG1639), eased between the predicted slacks and maxima
+  const drawApCurrent = (el) => {
+    if (!ready('currents', 'sun')) return el.replaceChildren('');
+    const d = today(), pts = curPts(d), t = nowMin();
+    const v = interp(pts, t);
+    if (v == null) return el.replaceChildren('');
+    const a = Math.abs(v), slack = a < 0.4, trend = Math.abs(interp(pts, t + 15)) - Math.abs(interp(pts, t - 15));
+    const phase = slack ? 'Slack' : v > 0 ? 'Flood' : 'Ebb';
+    const next = pts.find((p) => p.x > t);
+    const ev = pts.filter((p) => p.x <= t && p.r.type !== 'Slack').pop() || next;
+    const dir = !slack && ev && ev.r.type === phase ? ev.r.direction : null;
+    const line = mk('div', null, {}, 'ap-train');
+    line.append(mk('b', slack ? 'Slack' : `${phase} ${a.toFixed(1)} kt`), ' ', slack ? '' : mk('span', `${trend > 0 ? '↑ building' : '↓ easing'}${dir ? ' · toward ' + dir : ''}`, {}, 'mut'));
+    const parts = [mk('p', 'Current now', {}, 'ap-label'), line];
+    if (next) { const w = `at=${next.r.at}`; const n = mk('div', null, {}, 'ap-sub'); n.append(next.r.type === 'Slack' ? 'Slack' : `Max ${next.r.type.toLowerCase()} ${next.r.speed_kt} kt`, ' at ', cite('currents', 'time', w, next.r.time)); parts.push(n); }
+    el.replaceChildren(...parts);
+  };
+  dash.draw('apCurrent', drawApCurrent);
+  setInterval(() => document.querySelectorAll('[data-draw="apCurrent"]').forEach(drawApCurrent), 5 * 60e3);
   dash.draw('neahSwells', (el) => drawSwells(el, 'Neah Bay'));
 
   // Measured wind
