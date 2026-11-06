@@ -98,6 +98,8 @@
   .ap-wind .nm { font-weight: var(--cds-font-weight-medium); }
   .ap-wind .nm small { display: block; font-weight: 400; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
   .ap-wind .spark { min-width: 0; }
+  @media (max-width: 560px) { .ap-wind .row { grid-template-columns: 1fr 1fr; } .ap-wind .spark { grid-column: 1 / -1; } }
+  .ap-wind .spk-cap { display: block; font-size: 10px; color: var(--color-fg-muted); }
   .ap-flag { display: inline-block; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; color: var(--color-bad); margin-left: 6px; }
   [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
   [data-dash-source-state=empty] { color: transparent; }
@@ -522,12 +524,23 @@
       const t1 = ms(r.at), t0 = t1 - HOURS * 3600e3;
       const ser = all.map((o) => ({ ...o, t: ms(o.at) })).filter((o) => o.t >= t0);
       if (ser.length < 2) continue;
-      const W = 160, H = 30;
-      const svg = d3.select(sp).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('aria-hidden', 'true').style('width', '100%').style('max-width', '160px').style('height', '30px');
-      const x = d3.scaleLinear([t0, t1], [1, W - 1]);
-      const y = d3.scaleLinear([0, Math.max(20, d3.max(ser, (o) => o.wind_kmh) || 0)], [H - 2, 3]);
-      svg.append('line').attr('x1', 0).attr('x2', W).attr('y1', y(10)).attr('y2', y(10)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '2 2');
+      // small chart: km/h on the left, clock time along the bottom (BC time; `at` is already BC clock time)
+      const W = Math.max(160, Math.round(sp.clientWidth) || 190), H = 64, L = 22, B = 14; // drawn at real pixel size so labels stay readable
+      const svg = d3.select(sp).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `${name} wind, last ${HOURS} hours`).attr('width', W).attr('height', H).style('display', 'block');
+      const x = d3.scaleLinear([t0, t1], [L + 2, W - 4]);
+      const ymax = Math.ceil(Math.max(20, d3.max(ser, (o) => Math.max(o.wind_kmh || 0, o.gust_kmh || 0)) || 0) / 10) * 10;
+      const y = d3.scaleLinear([0, ymax], [H - B, 8]);
+      const lab = (tx, ty, t, anchor) => svg.append('text').attr('x', tx).attr('y', ty).attr('text-anchor', anchor).attr('font-size', 10).style('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums').text(t);
+      const yt = ymax <= 20 ? [0, 10, 20] : ymax <= 40 ? [0, 20, ymax] : [0, ymax / 2, ymax];
+      yt.forEach((v) => { svg.append('line').attr('x1', L).attr('x2', W - 2).attr('y1', y(v)).attr('y2', y(v)).attr('stroke', 'var(--cds-chart-grid)'); lab(L - 3, y(v) + 3, v, 'end'); });
+      svg.append('line').attr('x1', L).attr('x2', W - 2).attr('y1', y(10)).attr('y2', y(10)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '2 2');
+      const hr = (t) => { const h = new Date(t).getUTCHours(); return `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`; };
+      for (let t = Math.ceil(t0 / 7200e3) * 7200e3; t <= t1; t += 7200e3) {
+        svg.append('line').attr('x1', x(t)).attr('x2', x(t)).attr('y1', H - B).attr('y2', H - B + 2).attr('stroke', 'var(--color-fg-muted)');
+        lab(Math.min(W - 10, Math.max(L + 8, x(t))), H - 2, hr(t), 'middle');
+      }
       svg.append('path').datum(ser).attr('d', d3.line((o) => x(o.t), (o) => y(o.wind_kmh))).attr('fill', 'none').style('stroke', isEast(r) ? 'var(--color-bad)' : dash.colors[3]).attr('stroke-width', 1.5);
+      sp.append(mk('small', 'km/h · last 8 h', {}, 'spk-cap'));
     }
   });
 
