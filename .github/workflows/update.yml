@@ -57,6 +57,15 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
+      # A run cancelled mid-deploy can leave a Pages deployment stuck "in progress", which blocks every later deploy.
+      - name: Clear stuck Pages deployments
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for sha in $(gh api "repos/${{ github.repository }}/deployments?environment=github-pages&per_page=10" -q '.[].sha' | sort -u); do
+            [ "$sha" = "${{ github.sha }}" ] && continue
+            gh api -X POST "repos/${{ github.repository }}/pages/deployments/$sha/cancel" >/dev/null 2>&1 || true
+          done
       - id: deploy
         uses: actions/deploy-pages@v4
         timeout-minutes: 5
