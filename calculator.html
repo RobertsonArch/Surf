@@ -57,6 +57,8 @@ td .wd,td .ws{display:block;white-space:nowrap;line-height:1.25}
 td .wd{font-size:.68rem;letter-spacing:.02em}
 td .sd{display:block;white-space:nowrap;line-height:1.25;font-size:.68rem;opacity:.85}
 td.good{background:var(--goodbg);color:var(--good);font-weight:600}
+/* easing flood: still flood, lighter shade because only a building flood lifts the odds and size */
+td.flood{background:color-mix(in srgb,var(--goodbg) 45%,transparent);color:var(--good)}
 td.bad{color:var(--bad)}
 td.fcst{font-style:italic;opacity:.8}
 td.now{outline:2px solid var(--fg);outline-offset:-2px}
@@ -101,7 +103,7 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
     <div class="legend">
       <span><i style="background:var(--goodbg)"></i>Works: tide 0–6 ft, light, no east wind 10 km/h+</span>
       <span><i style="background:var(--off)"></i>Ruled out (reason in red)</span>
-      <span>Current: F flood running in, E ebb running out, S slack, in knots; ↑ building, ↓ easing. A building flood raises the odds and size and a building ebb lowers them; the odds change most on swells under 3 m</span>
+      <span>Current: F flood running in, E ebb running out, S slack, in knots; ↑ building, ↓ easing. Green is flood: dark green building, light green easing. Only a building flood raises the odds and size (most on swells under 3 m), and a building ebb lowers them</span>
     </div>
   </section>
 
@@ -260,7 +262,7 @@ function render(){
   if(ll!=null&&ll>s&&ll<e)return cell(r.light?"":"bad","to "+hm(ll),`Last light ${hm(ll)}`);
   return cell(r.light?"":"bad",r.light?"✓":"dark")}).join("")}</tr>`;
  html+=`<tr><th>Wind (from) km/h</th>${rows.map(r=>r.w?cell(r.east?"bad":"",`<span class="wd">${cmp(r.w.deg)}</span><span class="ws">${Math.round(r.w.kmh)}</span>`,`${Math.round(r.w.kmh)} km/h from ${cmp(r.w.deg)} (${Math.round(r.w.deg)}°)${r.w.obs?" measured":" forecast"}`):cell("","?")).join("")}</tr>`;
- html+=`<tr><th>Current kt</th>${rows.map(r=>{if(!r.v)return cell("","?");const kt=Math.abs(r.v.v)/51.44,ph=Math.abs(r.v.v)<20?"S":r.v.v>0?"F":"E",dir=r.v.v>0?r.v.fd:r.v.ed,cp=curPhase(r.t),bld=cp&&cp[1]==="b",ar=cp&&cp!=="S"?(bld?"↑":"↓"):"";return cell(cp==="Fb"?"good":"",ph==="S"?"S":`${ph}${kt.toFixed(1)}${ar}`,ph==="S"?"Slack":`${ph==="F"?"Flood":"Ebb"} ${kt.toFixed(1)} kt toward ${Math.round(dir)}°${cp&&cp!=="S"?(bld?", building":", easing"):""}`)}).join("")}</tr>`;
+ html+=`<tr><th>Current kt</th>${rows.map(r=>{if(!r.v)return cell("","?");const kt=Math.abs(r.v.v)/51.44,ph=Math.abs(r.v.v)<20?"S":r.v.v>0?"F":"E",dir=r.v.v>0?r.v.fd:r.v.ed,cp=curPhase(r.t),bld=cp&&cp[1]==="b",ar=cp&&cp!=="S"?(bld?"↑":"↓"):"";return cell(cp==="Fb"?"good":ph==="F"?"flood":"",ph==="S"?"S":`${ph}${kt.toFixed(1)}${ar}`,ph==="S"?"Slack":`${ph==="F"?"Flood":"Ebb"} ${kt.toFixed(1)} kt toward ${Math.round(dir)}°${cp&&cp!=="S"?(bld?", building":", easing"):""}`)}).join("")}</tr>`;
  if(hasNb||fcMode)html+=`<tr><th>Neah Bay m · s · dir${fcMode?"<br><small>forecast in italics</small>":""}</th>${rows.map(r=>r.nbNow?cell(r.nbNow.fc?"fcst":"",`<span class="wd">${r.nbNow.h.toFixed(1)}</span><span class="ws">${r.nbNow.p?Math.round(r.nbNow.p)+"s":"?"}</span><span class="sd">${r.nbNow.d!=null?Math.round(r.nbNow.d)+"°":"?"}</span>`,`Neah Bay ${r.nbNow.h.toFixed(2)} m, ${r.nbNow.p??"?"} s from ${r.nbNow.d??"?"}°`):cell("","–")).join("")}</tr>`;
  if(lastData.ap&&lastData.ap.size)html+=`<tr><th>Angeles Pt actual m · s · dir</th>${rows.map(r=>{const a=r.apx;if(!a)return cell("","–");const hit=a.h>=1.0&&a.p!=null&&a.p>=10;return cell(hit?"good":"",`<span class="wd">${a.h.toFixed(1)}</span><span class="ws">${a.p?Math.round(a.p)+"s":"?"}</span><span class="sd">${a.d!=null?Math.round(a.d)+"°":"?"}</span>`,`Angeles Point measured ${a.h.toFixed(2)} m at ${a.p??"?"} s from ${a.d??"?"}°${hit?" (1.0 m+ at 10 s+)":""}`)}).join("")}</tr>`;
  tbl.innerHTML=html;
