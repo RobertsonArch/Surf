@@ -45,27 +45,27 @@ rect.ev:focus-visible{outline:2px solid var(--mid);outline-offset:2px}
 <div class="wrap">
   <header>
     <div class="eyebrow">NDBC buoy 46087 · Neah Bay, WA · Nov 2015 – Apr 2016</div>
-    <h1>WNW–NW swells of 4 m and up</h1>
-    <p class="sub">Every swell event where the Neah Bay buoy, off Cape Flattery about 90 km from Ucluelet, read 4 m or more from 281–337°. Each bar spans the hours the swell held at 4 m+, drawn to the height of its peak. Colour shows the period at the peak.</p>
+    <h1>WNW–NW swells of 13.1 ft and up</h1>
+    <p class="sub">Every swell event where the Neah Bay buoy, off Cape Flattery about 90 km from Ucluelet, read 13.1 ft or more from 281–337°. Each bar spans the hours the swell held at 13.1 ft+, drawn to the height of its peak. Colour shows the period at the peak.</p>
   </header>
 
   <section class="stats" id="stats"></section>
 
   <section class="panel">
-    <div class="eyebrow">Peak Hs by event (metres)</div>
-    <div class="chart"><svg id="svg" role="img" aria-label="WNW to NW swell events of 4 metres or more, November 2015 to April 2016"></svg></div>
+    <div class="eyebrow">Peak Hs by event (feet)</div>
+    <div class="chart"><svg id="svg" role="img" aria-label="WNW to NW swell events of 13.1 ft or more, November 2015 to April 2016"></svg></div>
     <div id="tip">Hover or tap a bar for the event's details.</div>
     <div class="legend">
       <span><i style="background:var(--mid)"></i>10–14 s</span>
       <span><i style="background:var(--long)"></i>14 s and up (groundswell)</span>
-      <span><i style="background:var(--hot)"></i>7 m+ peak</span>
-      <span><i style="background:var(--span)"></i>Hours held at 4 m+</span>
+      <span><i style="background:var(--hot)"></i>23 ft+ peak</span>
+      <span><i style="background:var(--span)"></i>Hours held at 13.1 ft+</span>
     </div>
   </section>
 
   <section class="panel">
     <div class="eyebrow" style="margin-bottom:8px">Events, in date order</div>
-    <div class="tbl"><table id="events"><thead><tr><th>Dates (UTC)</th><th>Peak Hs</th><th>Feet</th><th>Period</th><th>Dir at peak</th><th>Dir range</th><th>Hours 4 m+</th><th>Share from true NW</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl"><table id="events"><thead><tr><th>Dates (UTC)</th><th>Peak Hs (ft)</th><th>Period</th><th>Dir at peak</th><th>Dir range</th><th>Hours 13.1 ft+</th><th>Share from true NW</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <p class="foot">Source: NOAA National Data Buoy Center, station 46087 (Neah Bay) standard meteorological records, reported every 30 minutes. Hours counts each hour with at least one qualifying reading, and an event groups qualifying readings less than 12 hours apart. The buoy sits at the mouth of the Strait of Juan de Fuca, so it reads lower than open-ocean buoys in big southwest swells. True NW means 293° or further north; readings from 281–292° are WNW. Direction is the buoy's mean wave direction, so a NW swell mixed with a southerly wind sea can read further west than it was. No event qualified in April.</p>
@@ -84,11 +84,11 @@ const E=[
 ["2016-01-28T12","2016-01-28T12",4.17,13.79,318,318,318,1,1],
 ["2016-01-30T04","2016-01-30T04",4.72,14.81,283,283,283,1,0],
 ["2016-03-24T17","2016-03-25T03",4.5,16,283,282,288,4,0]
-].map(([s,e,h,p,d,dn,dx,n,nw])=>({s:Date.parse(s+":00Z"),e:Date.parse(e+":00Z"),h,p,d,dn,dx,n,nw}));
+].map(([s,e,h,p,d,dn,dx,n,nw])=>({s:Date.parse(s+":00Z"),e:Date.parse(e+":00Z"),h:+(h*3.28084).toFixed(1),p,d,dn,dx,n,nw}));
 const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const ft=h=>(h*3.281).toFixed(1);
 const compass=deg=>["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5)%16];
-const col=r=>r.h>=7?"var(--hot)":r.p>=14?"var(--long)":r.p>=10?"var(--mid)":"var(--short)";
+const col=r=>r.h>=23?"var(--hot)":r.p>=14?"var(--long)":r.p>=10?"var(--mid)":"var(--short)";
 const fmt=t=>{const d=new Date(t);return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`};
 const range=r=>{const a=fmt(r.s),b=fmt(r.e);return a===b?a:(a.split(" ")[0]===b.split(" ")[0]?`${a}–${b.split(" ")[1]}`:`${a}–${b}`)};
 
@@ -96,35 +96,35 @@ const range=r=>{const a=fmt(r.s),b=fmt(r.e);return a===b?a:(a.split(" ")[0]===b.
 const big=E.reduce((a,b)=>b.h>a.h?b:a), hrs=E.reduce((s,r)=>s+r.n,0), nwH=E.reduce((s,r)=>s+r.nw,0);
 const preXmas=E.filter(r=>r.s<Date.parse("2015-12-26T00:00Z")).length;
 document.getElementById("stats").innerHTML=[
- [E.length,"Events at 4 m+ from WNW–NW"],
- [`${big.h} m`,`Biggest · ${range(big)} (${ft(big.h)} ft)`],
+ [E.length,"Events at 13.1 ft+ from WNW–NW"],
+ [`${big.h} ft`,`Biggest · ${range(big)}`],
  [`${preXmas} of ${E.length}`,"Events before Christmas"],
  [`${Math.round(nwH/hrs*100)}%`,`Of ${hrs} qualifying hours from true NW`]
 ].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
 
 // chart: Nov 1 2015 – May 1 2016 time axis
 const t0=Date.parse("2015-11-01T00:00Z"),t1=Date.parse("2016-05-01T00:00Z"),DAY=864e5;
-const svg=document.getElementById("svg"),W=960,H=320,L=34,R=10,T=26,B=30,yMax=10;
+const svg=document.getElementById("svg"),W=960,H=320,L=34,R=10,T=26,B=30,yMax=25;
 svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.style.width="100%";svg.style.minWidth="640px";
 const x=t=>L+(t-t0)/(t1-t0)*(W-L-R), y=v=>T+(H-T-B)*(1-v/yMax);
 let s="";
-for(let v=0;v<=yMax;v+=2) s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
-s+=`<line x1="${L}" x2="${W-R}" y1="${y(4)}" y2="${y(4)}" stroke="var(--muted)" stroke-dasharray="4 4"/><text x="${W-R}" y="${y(4)-5}" text-anchor="end">4 m threshold</text>`;
+for(let v=0;v<=yMax;v+=5) s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+s+=`<line x1="${L}" x2="${W-R}" y1="${y(13.1)}" y2="${y(13.1)}" stroke="var(--muted)" stroke-dasharray="4 4"/><text x="${W-R}" y="${y(13.1)-5}" text-anchor="end">13.1 ft threshold</text>`;
 [["2015-11-01","Nov 2015"],["2015-12-01","Dec"],["2016-01-01","Jan 2016"],["2016-02-01","Feb"],["2016-03-01","Mar"],["2016-04-01","Apr"]].forEach(([d,l])=>{const xx=x(Date.parse(d+"T00:00Z"));s+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${H-B}" stroke="var(--grid)" stroke-dasharray="2 3"/><text x="${xx+3}" y="${H-10}">${l}</text>`});
 E.forEach((r,i)=>{
   const xs=x(r.s), xe=Math.max(x(r.e+3600e3), xs+4), w=xe-xs, mid=(xs+xe)/2, bw=Math.max(5, Math.min(w, 9));
-  s+=`<rect x="${xs}" y="${y(4)}" width="${w}" height="${y(0)-y(4)}" fill="var(--span)"/>`;
+  s+=`<rect x="${xs}" y="${y(13.1)}" width="${w}" height="${y(0)-y(13.1)}" fill="var(--span)"/>`;
   s+=`<rect class="ev" tabindex="0" data-i="${i}" x="${mid-bw/2}" y="${y(r.h)}" width="${bw}" height="${y(0)-y(r.h)}" fill="${col(r)}" rx="1"/>`;
-  if(r.h>=5.9) s+=`<text class="lab" x="${mid}" y="${y(r.h)-6}" text-anchor="middle">${r.h} m</text>`;
+  if(r.h>=19.4) s+=`<text class="lab" x="${mid}" y="${y(r.h)-6}" text-anchor="middle">${r.h} ft</text>`;
 });
 svg.innerHTML=s;
 const tip=document.getElementById("tip");
-const show=e=>{const i=e.target.dataset.i;if(i==null)return;const r=E[i];tip.textContent=`${range(r)} · ${r.h} m (${ft(r.h)} ft) · ${r.p} s · peak from ${r.d}° ${compass(r.d)} · ${r.n} h at 4 m+, ${r.nw} from true NW`};
+const show=e=>{const i=e.target.dataset.i;if(i==null)return;const r=E[i];tip.textContent=`${range(r)} · ${r.h} ft · ${r.p} s · peak from ${r.d}° ${compass(r.d)} · ${r.n} h at 13.1 ft+, ${r.nw} from true NW`};
 svg.addEventListener("mouseover",show);svg.addEventListener("focusin",show);svg.addEventListener("click",show);
 
 // table
 document.querySelector("#events tbody").innerHTML=E.map(r=>{const pct=Math.round(r.nw/r.n*100);
- return `<tr><td>${range(r)}</td><td class="n">${r.h.toFixed(2)} m</td><td class="n">${ft(r.h)}</td><td class="n">${r.p} s</td><td class="n">${r.d}° ${compass(r.d)}</td><td class="n">${r.dn===r.dx?r.dn+"°":r.dn+"–"+r.dx+"°"}</td><td class="n">${r.n}</td><td class="n"><span class="meter"><i style="width:${pct}%"></i></span>${r.nw} of ${r.n}</td></tr>`}).join("");
+ return `<tr><td>${range(r)}</td><td class="n">${r.h.toFixed(1)}</td><td class="n">${r.p} s</td><td class="n">${r.d}° ${compass(r.d)}</td><td class="n">${r.dn===r.dx?r.dn+"°":r.dn+"–"+r.dx+"°"}</td><td class="n">${r.n}</td><td class="n"><span class="meter"><i style="width:${pct}%"></i></span>${r.nw} of ${r.n}</td></tr>`}).join("");
 </script>
 
 </body></html>

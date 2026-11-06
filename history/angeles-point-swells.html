@@ -46,33 +46,33 @@ rect.ev:focus-visible{outline:2px solid var(--mid);outline-offset:2px}
   <header>
     <div class="eyebrow">CDIP 248 / NDBC 46267 · Angeles Point, WA · Apr 2020 – Oct 2026</div>
     <h1>Swells into the Strait at Angeles Point</h1>
-    <p class="sub">Every swell event where the buoy near Port Angeles read a significant height of 1.2 m or more at a peak period of 10 s or longer. Each bar is one event, drawn to its peak height and coloured by the period at that peak. The spot works with the tide between 0 and 6 ft, needs light, and shuts down in an east wind of 10 km/h or more, so the monthly grid and the rideable counts keep only swell hours with the tide in that window, between civil dawn and civil dusk, without that wind.</p>
+    <p class="sub">Every swell event where the buoy near Port Angeles read a significant height of 3.9 ft or more at a peak period of 10 s or longer. Each bar is one event, drawn to its peak height and coloured by the period at that peak. The spot works with the tide between 0 and 6 ft, needs light, and shuts down in an east wind of 10 km/h or more, so the monthly grid and the rideable counts keep only swell hours with the tide in that window, between civil dawn and civil dusk, without that wind.</p>
   </header>
 
   <section class="stats" id="stats"></section>
 
   <section class="panel">
-    <div class="eyebrow">Peak Hs by event (metres)</div>
-    <div class="scroll"><svg id="svg" role="img" aria-label="Swell events of 1.2 metres or more at 10 seconds or longer, April 2020 to October 2026"></svg></div>
+    <div class="eyebrow">Peak Hs by event (feet)</div>
+    <div class="scroll"><svg id="svg" role="img" aria-label="Swell events of 3.9 ft or more at 10 seconds or longer, April 2020 to October 2026"></svg></div>
     <div class="tip" id="tip">Hover or tap a bar for the event's details.</div>
     <div class="legend">
       <span><i style="background:var(--mid)"></i>10–12 s</span>
       <span><i style="background:var(--long)"></i>12 s and up</span>
-      <span><i style="background:var(--hot)"></i>3 m+ peak</span>
+      <span><i style="background:var(--hot)"></i>9.8 ft+ peak</span>
       <span><i style="background:var(--gap)"></i>Buoy out of the water</span>
       <span><i style="background:var(--mid);opacity:.3"></i>Faded: no rideable hours (tide, daylight, wind)</span>
     </div>
   </section>
 
   <section class="panel">
-    <div class="eyebrow">Rideable hours by month: qualifying swell (1.2 m+ at 10 s+), tide 0–6 ft, daylight, no east wind of 10 km/h+</div>
+    <div class="eyebrow">Rideable hours by month: qualifying swell (3.9 ft+ at 10 s+), tide 0–6 ft, daylight, no east wind of 10 km/h+</div>
     <div class="scroll"><table class="heat" id="heat"></table></div>
     <div class="legend"><span>Darker means more hours. Hatched cells had little or no data.</span></div>
   </section>
 
   <section class="panel">
     <div class="eyebrow">Biggest 12 events</div>
-    <div class="scroll"><table id="top"><thead><tr><th>Dates (UTC)</th><th>Peak Hs</th><th>Feet</th><th>Period at peak</th><th>Longest period</th><th>Direction</th><th>Swell hours</th><th>Rideable</th></tr></thead><tbody></tbody></table></div>
+    <div class="scroll"><table id="top"><thead><tr><th>Dates (UTC)</th><th>Peak Hs (ft)</th><th>Period at peak</th><th>Longest period</th><th>Direction</th><th>Swell hours</th><th>Rideable</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <p class="foot">Source: NOAA National Data Buoy Center, station 46267 (CDIP 248) standard meteorological files: quality-controlled annual files for 2020–2025, monthly files for 2026, and the 45-day real-time file for October 2026, which has not been reviewed yet. Readings are every 30 minutes. Hours counts each hour with at least one qualifying reading, and an event groups qualifying readings less than 12 hours apart. Direction is the peak direction at the event's highest reading. The buoy only sees swell that travels in from the open ocean down the Strait of Juan de Fuca, so nearly every event arrives from 270–310°. Tides are hourly observed water levels at NOAA's Port Angeles station (9444090), in feet above MLLW, with the station's predictions filling October 2026; an hour counts as rideable when that hour's level sits from 0 to 6 ft and the sun at the middle of the hour is no more than 6° below the horizon at Port Angeles (civil twilight, roughly 30–40 minutes before sunrise and after sunset). Wind is the hourly average at the same Port Angeles station; an hour is ruled out when it blows from 45–135° (NE through SE) at 10 km/h or more. Hours with no wind reading (6 of the daylight, in-tide hours) are kept. The buoy was out of the water for parts of Aug 2021, Dec 2021, Sep–Oct 2023 and Feb–Apr 2026.</p>
@@ -88,11 +88,11 @@ const MONH={"2020-05":[38,29,24,24],"2020-06":[11,7,6,6],"2020-07":[12,6,3,3],"2
 const COV={"2020-04":1392,"2020-05":1441,"2020-06":1402,"2020-07":1461,"2020-08":1461,"2020-09":1424,"2020-10":1446,"2020-11":1348,"2020-12":1441,"2021-01":1454,"2021-02":1323,"2021-03":1071,"2021-04":1414,"2021-05":1463,"2021-06":1347,"2021-07":1049,"2021-08":227,"2021-09":1412,"2021-10":1457,"2021-11":1410,"2021-12":810,"2022-01":1454,"2022-02":1321,"2022-03":1452,"2022-04":1412,"2022-05":1422,"2022-06":1423,"2022-07":1484,"2022-08":1486,"2022-09":1440,"2022-10":1483,"2022-11":1435,"2022-12":1483,"2023-01":1474,"2023-02":1341,"2023-03":1488,"2023-04":1432,"2023-05":1480,"2023-06":1440,"2023-07":1447,"2023-08":1479,"2023-09":96,"2023-10":671,"2023-11":1405,"2023-12":1487,"2024-01":1486,"2024-02":1392,"2024-03":1486,"2024-04":1401,"2024-05":1486,"2024-06":1386,"2024-07":1110,"2024-08":715,"2024-09":1375,"2024-10":1480,"2024-11":1436,"2024-12":1476,"2025-01":1487,"2025-02":1342,"2025-03":1488,"2025-04":1435,"2025-05":1486,"2025-06":1432,"2025-07":1482,"2025-08":1482,"2025-09":1435,"2025-10":1472,"2025-11":1433,"2025-12":1410,"2026-01":1447,"2026-02":69,"2026-04":294,"2026-05":1438,"2026-06":1436,"2026-07":1462,"2026-08":1469,"2026-09":1440,"2026-10":1300};
 const GAPS=[["2021-07-23","2021-08-27"],["2021-12-08","2021-12-22"],["2023-09-02","2023-10-17"],["2026-02-02","2026-04-24"]];
 const pt=s=>Date.UTC(2000+ +s.slice(0,2),+s.slice(2,4)-1,+s.slice(4,6),+s.slice(6,8));
-const E=RAW.split("|").map((r,i)=>{const [a,b,h,p,d,n,pm]=r.split(" ");return{s:pt(a),e:pt(b),h:+h,p:+p,d:+d,n:+n,pm:+pm,ok:EVOK[i]}});
+const E=RAW.split("|").map((r,i)=>{const [a,b,h,p,d,n,pm]=r.split(" ");return{s:pt(a),e:pt(b),h:+(h*3.28084).toFixed(1),p:+p,d:+d,n:+n,pm:+pm,ok:EVOK[i]}});
 const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const ft=h=>(h*3.281).toFixed(1);
 const compass=deg=>["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5)%16];
-const col=r=>r.h>=3?"var(--hot)":r.p>=12?"var(--long)":"var(--mid)";
+const col=r=>r.h>=9.8?"var(--hot)":r.p>=12?"var(--long)":"var(--mid)";
 const fmt=t=>{const d=new Date(t);return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`};
 const range=r=>{const a=new Date(r.s),b=new Date(r.e);const sameDay=a.toISOString().slice(0,10)===b.toISOString().slice(0,10);
   if(sameDay)return fmt(r.s); if(a.getUTCFullYear()===b.getUTCFullYear()&&a.getUTCMonth()===b.getUTCMonth())return `${MON[a.getUTCMonth()]} ${a.getUTCDate()}–${b.getUTCDate()}, ${a.getUTCFullYear()}`;
@@ -104,7 +104,7 @@ const tot=E.reduce((s,r)=>s+r.n,0), okTot=E.reduce((s,r)=>s+r.ok,0), dead=E.filt
 const tideTot=Object.values(MONH).reduce((s,v)=>s+v[1],0), lightTot=Object.values(MONH).reduce((s,v)=>s+v[2],0);
 document.getElementById("stats").innerHTML=[
  [E.length,"Events since Apr 2020"],
- [tot.toLocaleString("en-US"),"Hours of qualifying swell (1.2 m+ at 10 s+)"],
+ [tot.toLocaleString("en-US"),"Hours of qualifying swell (3.9 ft+ at 10 s+)"],
  [tideTot.toLocaleString("en-US"),`Of those with the tide at 0–6 ft (${Math.round(tideTot/tot*100)}%)`],
  [lightTot.toLocaleString("en-US"),`Of those also in daylight (${Math.round(lightTot/tot*100)}%)`],
  [okTot.toLocaleString("en-US"),`Rideable: also no east wind of 10 km/h+ (${Math.round(okTot/tot*100)}%)`],
@@ -114,19 +114,19 @@ document.getElementById("stats").innerHTML=[
 
 // timeline
 const t0=Date.UTC(2020,3,1),t1=Date.UTC(2026,10,1);
-const svg=document.getElementById("svg"),W=1040,H=300,L=30,R=10,T=14,B=30,yMax=4.5;
+const svg=document.getElementById("svg"),W=1040,H=300,L=30,R=10,T=14,B=30,yMax=15;
 svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.style.width="100%";svg.style.minWidth="760px";
 const x=t=>L+(t-t0)/(t1-t0)*(W-L-R), y=v=>T+(H-T-B)*(1-v/yMax);
 let s="";
 GAPS.forEach(([a,b])=>{const xa=x(Date.parse(a+"T00:00Z")),xb=x(Date.parse(b+"T00:00Z"));s+=`<rect x="${xa}" y="${T}" width="${xb-xa}" height="${H-T-B}" fill="var(--gap)"/>`});
-for(let v=0;v<=4;v++) s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
-s+=`<line x1="${L}" x2="${W-R}" y1="${y(1.2)}" y2="${y(1.2)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
+for(let v=0;v<=14;v+=2) s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+s+=`<line x1="${L}" x2="${W-R}" y1="${y(3.9)}" y2="${y(3.9)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
 for(let yr=2020;yr<=2026;yr++){const xx=x(Date.UTC(yr,yr===2020?3:0,1));s+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${H-B}" stroke="var(--grid)"/><text x="${xx+3}" y="${H-10}">${yr===2020?"Apr 2020":yr}</text>`}
 E.forEach((r,i)=>{const mid=(x(r.s)+x(r.e))/2;s+=`<rect class="ev" tabindex="0" data-i="${i}" x="${mid-1.5}" y="${y(r.h)}" width="3" height="${y(0)-y(r.h)}" fill="${col(r)}"${r.ok?"":' fill-opacity="0.3"'}/>`});
-E.filter(r=>r.h>=3.2).forEach(r=>{const mid=(x(r.s)+x(r.e))/2;s+=`<text x="${mid}" y="${y(r.h)-6}" text-anchor="middle" style="fill:var(--fg)">${r.h} m</text>`});
+E.filter(r=>r.h>=10.5).forEach(r=>{const mid=(x(r.s)+x(r.e))/2;s+=`<text x="${mid}" y="${y(r.h)-6}" text-anchor="middle" style="fill:var(--fg)">${r.h} ft</text>`});
 svg.innerHTML=s;
 const tip=document.getElementById("tip");
-const show=e=>{const i=e.target.dataset.i;if(i==null)return;const r=E[i];tip.textContent=`${range(r)} · ${r.h} m (${ft(r.h)} ft) · ${r.p} s at peak, up to ${r.pm} s · from ${r.d}° ${compass(r.d)} · ${r.n} h of swell, ${r.ok} rideable h (tide 0–6 ft, daylight, no east wind)`};
+const show=e=>{const i=e.target.dataset.i;if(i==null)return;const r=E[i];tip.textContent=`${range(r)} · ${r.h} ft · ${r.p} s at peak, up to ${r.pm} s · from ${r.d}° ${compass(r.d)} · ${r.n} h of swell, ${r.ok} rideable h (tide 0–6 ft, daylight, no east wind)`};
 svg.addEventListener("mouseover",show);svg.addEventListener("focusin",show);svg.addEventListener("click",show);
 
 // month-by-year grid
@@ -146,7 +146,7 @@ document.getElementById("heat").innerHTML=g+"</tbody>";
 
 // top events
 document.querySelector("#top tbody").innerHTML=[...E].sort((a,b)=>b.h-a.h).slice(0,12)
- .map(r=>`<tr><td>${range(r)}</td><td class="n">${r.h.toFixed(2)} m</td><td class="n">${ft(r.h)}</td><td class="n">${r.p} s</td><td class="n">${r.pm} s</td><td class="n">${r.d}° ${compass(r.d)}</td><td class="n">${r.n}</td><td class="n">${r.ok}</td></tr>`).join("");
+ .map(r=>`<tr><td>${range(r)}</td><td class="n">${r.h.toFixed(1)}</td><td class="n">${r.p} s</td><td class="n">${r.pm} s</td><td class="n">${r.d}° ${compass(r.d)}</td><td class="n">${r.n}</td><td class="n">${r.ok}</td></tr>`).join("");
 </script>
 
 </body></html>

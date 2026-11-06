@@ -51,7 +51,7 @@ details summary{cursor:pointer;font-family:var(--display);font-weight:600}
   <header>
     <div class="eyebrow">Winter 2015–16 · very strong El Niño · Nov 2015 – Apr 2016</div>
     <h1>The 2015–16 winter, buoy by buoy</h1>
-    <p class="sub">Everything on record for the strongest El Niño winter in the Neah Bay archive: daily swell peaks at three buoys, a monthly breakdown, every Neah Bay swell of 4 m+ from 270–330° with a modelled Angeles Point outcome, and the full daily table.</p>
+    <p class="sub">Everything on record for the strongest El Niño winter in the Neah Bay archive: daily swell peaks at three buoys, a monthly breakdown, every Neah Bay swell of 13.1 ft+ from 270–330° with a modelled Angeles Point outcome, and the full daily table.</p>
   </header>
 
   <section class="stats" id="stats"></section>
@@ -74,9 +74,9 @@ details summary{cursor:pointer;font-family:var(--display);font-weight:600}
   </section>
 
   <section class="panel">
-    <h2>Neah Bay swells of 4 m+ from 270–330°</h2>
+    <h2>Neah Bay swells of 13.1 ft+ from 270–330°</h2>
     <div class="scroll"><table id="events"></table></div>
-    <p class="note">The Angeles Point columns are modelled, not measured: the Angeles Point buoy wasn't installed until April 2020. They come from the same history the calculator uses (how often Angeles Point reached 1.0 m+ at 10 s+ after similar Neah Bay swells since 2020). ≥ marks a swell bigger than anything in that history.</p>
+    <p class="note">The Angeles Point columns are modelled, not measured: the Angeles Point buoy wasn't installed until April 2020. They come from the same history the calculator uses (how often Angeles Point reached 3.3 ft+ at 10 s+ after similar Neah Bay swells since 2020). ≥ marks a swell bigger than anything in that history.</p>
   </section>
 
   <section class="panel">
@@ -104,43 +104,44 @@ const ft=h=>(h*3.281).toFixed(1);
 const compass=d=>["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(d/22.5)%16];
 const yOf=k=>+k.slice(0,2)>=11?2015:2016;
 const label=k=>`${MON[+k.slice(0,2)-1]} ${+k.slice(2)}, ${yOf(k)}`;
-const days=NB.map((r,i)=>({k:r[0],nb:{h:r[1],p:r[2],d:r[3]},lp:{h:LP[i][1],p:LP[i][2]},ce:{h:CE[i][1],p:CE[i][2],d:CE[i][3]}}));
+const M2F=v=>+(v*3.28084).toFixed(1);
+const days=NB.map((r,i)=>({k:r[0],nb:{h:M2F(r[1]),p:r[2],d:r[3]},lp:{h:M2F(LP[i][1]),p:LP[i][2]},ce:{h:M2F(CE[i][1]),p:CE[i][2],d:CE[i][3]}}));
 const peak=key=>days.reduce((a,b)=>b[key].h>a[key].h?b:a);
 
 // stats
 (()=>{const n=peak("nb"),l=peak("lp"),c=peak("ce");
  document.getElementById("stats").innerHTML=[
-  [`${n.nb.h} m`,`Neah Bay peak · ${label(n.k).replace(/, \d{4}/,"")} · ${ft(n.nb.h)} ft`],
-  [`${l.lp.h} m`,`La Perouse peak · ${label(l.k).replace(/, \d{4}/,"")} · ${ft(l.lp.h)} ft`],
-  [`${c.ce.h} m`,`Cape Elizabeth peak · ${label(c.k).replace(/, \d{4}/,"")} · ${ft(c.ce.h)} ft`],
-  ["7","Neah Bay swells of 5 m+ from 270–330°"],
-  ["2nd","Best winter on record for 4 m+ hours from 270–330° (tied with 2019–20)"]
+  [`${n.nb.h} ft`,`Neah Bay peak · ${label(n.k).replace(/, \d{4}/,"")}`],
+  [`${l.lp.h} ft`,`La Perouse peak · ${label(l.k).replace(/, \d{4}/,"")}`],
+  [`${c.ce.h} ft`,`Cape Elizabeth peak · ${label(c.k).replace(/, \d{4}/,"")}`],
+  ["7","Neah Bay swells of 16.4 ft+ from 270–330°"],
+  ["2nd","Best winter on record for 13.1 ft+ hours from 270–330° (tied with 2019–20)"]
  ].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("")})();
 
 // chart
 const show={nb:true,lp:true,ce:false};
-function draw(){const svg=document.getElementById("svg"),W=1040,H=320,L=34,R=10,T=14,B=30,yMax=10;
+function draw(){const svg=document.getElementById("svg"),W=1040,H=320,L=34,R=10,T=14,B=30,yMax=35;
  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.style.width="100%";svg.style.minWidth="720px";
  const x=i=>L+i*(W-L-R)/(days.length-1),y=v=>T+(H-T-B)*(1-v/yMax);let s="";
- for(let v=0;v<=yMax;v+=2)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+ for(let v=0;v<=yMax;v+=5)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
  days.forEach((d,i)=>{if(d.k.slice(2)==="01")s+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H-B}" stroke="var(--grid)" stroke-dasharray="2 3"/><text x="${x(i)+3}" y="${H-10}">${MON[+d.k.slice(0,2)-1]}${d.k==="1101"?" 2015":d.k==="0101"?" 2016":""}</text>`});
  for(const k of ["ce","lp","nb"]){if(!show[k])continue;const pts=days.map((d,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(d[k].h).toFixed(1)}`).join("");
   s+=`<path d="${pts}" fill="none" stroke="var(--${k})" stroke-width="${k==="nb"?2.2:1.6}" stroke-linejoin="round"/>`}
- const n=peak("nb"),ni=days.indexOf(n);s+=`<circle cx="${x(ni)}" cy="${y(n.nb.h)}" r="4" fill="var(--nb)"/><text x="${x(ni)+7}" y="${y(n.nb.h)+4}" style="fill:var(--fg)">${n.nb.h} m</text>`;
+ const n=peak("nb"),ni=days.indexOf(n);s+=`<circle cx="${x(ni)}" cy="${y(n.nb.h)}" r="4" fill="var(--nb)"/><text x="${x(ni)+7}" y="${y(n.nb.h)+4}" style="fill:var(--fg)">${n.nb.h} ft</text>`;
  s+=`<line id="cur" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>`;
  s+=`<rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent"/>`;
  svg.innerHTML=s;
  const hit=svg.querySelector("#hit"),cur=svg.querySelector("#cur"),tip=document.getElementById("tip");
  const move=ev=>{const r=svg.getBoundingClientRect(),px=(ev.clientX-r.left)/r.width*W;const i=Math.max(0,Math.min(days.length-1,Math.round((px-L)/(W-L-R)*(days.length-1))));const d=days[i];
   cur.setAttribute("x1",x(i));cur.setAttribute("x2",x(i));cur.setAttribute("visibility","visible");
-  tip.textContent=`${label(d.k)} · Neah Bay ${d.nb.h} m ${d.nb.p}s ${d.nb.d}° · La Perouse ${d.lp.h} m ${d.lp.p}s · Cape Eliz ${d.ce.h} m ${d.ce.p}s ${d.ce.d}°`};
+  tip.textContent=`${label(d.k)} · Neah Bay ${d.nb.h} ft ${d.nb.p}s ${d.nb.d}° · La Perouse ${d.lp.h} ft ${d.lp.p}s · Cape Eliz ${d.ce.h} ft ${d.ce.p}s ${d.ce.d}°`};
  hit.addEventListener("pointermove",move);hit.addEventListener("pointerdown",move)}
 document.querySelectorAll(".keys button").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.k;show[k]=!show[k];b.setAttribute("aria-pressed",String(show[k]));draw()}));
 draw();
 
 // months
 (()=>{const ms=["11","12","01","02","03","04"];
- let h=`<thead><tr><th>Month</th><th>Neah Bay mean</th><th>Neah Bay max</th><th>La Perouse mean</th><th>La Perouse max</th><th>Cape Eliz mean</th><th>Cape Eliz max</th><th>NB 3 m+ h</th><th>NB 4 m+ h</th><th>NB 5 m+ h</th></tr></thead><tbody>`;
+ let h=`<thead><tr><th>Month</th><th>Neah Bay mean ft</th><th>Neah Bay max ft</th><th>La Perouse mean ft</th><th>La Perouse max ft</th><th>Cape Eliz mean ft</th><th>Cape Eliz max ft</th><th>NB 9.8 ft+ h</th><th>NB 13.1 ft+ h</th><th>NB 16.4 ft+ h</th></tr></thead><tbody>`;
  for(const m of ms){const ds=days.filter(d=>d.k.slice(0,2)===m),y=m>="11"?2015:2016;const st=k=>{const v=ds.map(d=>d[k].h);return[(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1),Math.max(...v).toFixed(1)]};
   const [a,b]=st("nb"),[c,d]=st("lp"),[e,f]=st("ce");const nm=NBMON[`${y}-${m}`];
   h+=`<tr><td>${MON[+m-1]} ${y}</td><td class="n">${a}</td><td class="n">${b}</td><td class="n">${c}</td><td class="n">${d}</td><td class="n">${e}</td><td class="n">${f}</td><td class="n">${nm[1]}</td><td class="n">${nm[2]}</td><td class="n ${nm[3]>=10?"big":""}">${nm[3]}</td></tr>`}
@@ -148,15 +149,15 @@ draw();
 
 // events
 (()=>{const fmt=s=>{const d=new Date(s+":00:00Z");return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}, ${String(d.getUTCHours()).padStart(2,"0")}:00`};
- let h=`<thead><tr><th>Start (PST)</th><th>End</th><th>Hours 4 m+</th><th>Peak</th><th>Feet</th><th>Period</th><th>Direction</th><th>Dir range</th><th>AP chance 1 m+ (model)</th><th>AP size (model)</th></tr></thead><tbody>`;
+ let h=`<thead><tr><th>Start (PST)</th><th>End</th><th>Hours 13.1 ft+</th><th>Peak ft</th><th>Period</th><th>Direction</th><th>Dir range</th><th>AP chance 3.3 ft+ (model)</th><th>AP size (model)</th></tr></thead><tbody>`;
  for(const e of EV){const [s,en,n,hm,p,d,lo,hi,pc,ap,cap]=e;
-  h+=`<tr><td>${fmt(s)}</td><td>${s===en?"–":fmt(en)}</td><td class="n">${n}</td><td class="n ${hm>=6?"big":""}">${hm.toFixed(2)} m</td><td class="n">${ft(hm)}</td><td class="n">${p} s</td><td class="n">${d}° ${compass(d)}</td><td class="n">${lo===hi?lo+"°":lo+"–"+hi+"°"}</td><td class="n ${pc>=75?"ok":""}">${cap?"≥":""}${pc}%</td><td class="n">${cap?"≥":""}${ap.toFixed(1)} m · ${ft(ap)} ft</td></tr>`}
+  h+=`<tr><td>${fmt(s)}</td><td>${s===en?"–":fmt(en)}</td><td class="n">${n}</td><td class="n ${hm>=6?"big":""}">${ft(hm)}</td><td class="n">${p} s</td><td class="n">${d}° ${compass(d)}</td><td class="n">${lo===hi?lo+"°":lo+"–"+hi+"°"}</td><td class="n ${pc>=75?"ok":""}">${cap?"≥":""}${pc}%</td><td class="n">${cap?"≥":""}${ft(ap)} ft</td></tr>`}
  document.getElementById("events").innerHTML=h+"</tbody>"})();
 
 // daily table + csv
-const csv=["date,neahbay_m,neahbay_s,neahbay_dir,laperouse_m,laperouse_s,capeeliz_m,capeeliz_s,capeeliz_dir"].concat(days.map(d=>{const y=yOf(d.k);return `${y}-${d.k.slice(0,2)}-${d.k.slice(2)},${d.nb.h},${d.nb.p},${d.nb.d},${d.lp.h},${d.lp.p},${d.ce.h},${d.ce.p},${d.ce.d}`})).join("\n");
-document.getElementById("daily").innerHTML=`<thead><tr><th>Date (UTC)</th><th>Neah Bay m</th><th>s</th><th>dir</th><th>La Perouse m</th><th>s</th><th>Cape Eliz m</th><th>s</th><th>dir</th></tr></thead><tbody>`+
- days.map(d=>`<tr><td>${label(d.k)}</td><td class="n ${d.nb.h>=6?"big":""}">${d.nb.h.toFixed(2)}</td><td class="n">${d.nb.p}</td><td class="n">${d.nb.d}°</td><td class="n ${d.lp.h>=6?"big":""}">${d.lp.h.toFixed(1)}</td><td class="n">${d.lp.p}</td><td class="n ${d.ce.h>=6?"big":""}">${d.ce.h.toFixed(2)}</td><td class="n">${d.ce.p}</td><td class="n">${d.ce.d}°</td></tr>`).join("")+"</tbody>";
+const csv=["date,neahbay_ft,neahbay_s,neahbay_dir,laperouse_ft,laperouse_s,capeeliz_ft,capeeliz_s,capeeliz_dir"].concat(days.map(d=>{const y=yOf(d.k);return `${y}-${d.k.slice(0,2)}-${d.k.slice(2)},${d.nb.h},${d.nb.p},${d.nb.d},${d.lp.h},${d.lp.p},${d.ce.h},${d.ce.p},${d.ce.d}`})).join("\n");
+document.getElementById("daily").innerHTML=`<thead><tr><th>Date (UTC)</th><th>Neah Bay ft</th><th>s</th><th>dir</th><th>La Perouse ft</th><th>s</th><th>Cape Eliz ft</th><th>s</th><th>dir</th></tr></thead><tbody>`+
+ days.map(d=>`<tr><td>${label(d.k)}</td><td class="n ${d.nb.h>=19.7?"big":""}">${d.nb.h.toFixed(1)}</td><td class="n">${d.nb.p}</td><td class="n">${d.nb.d}°</td><td class="n ${d.lp.h>=19.7?"big":""}">${d.lp.h.toFixed(1)}</td><td class="n">${d.lp.p}</td><td class="n ${d.ce.h>=19.7?"big":""}">${d.ce.h.toFixed(1)}</td><td class="n">${d.ce.p}</td><td class="n">${d.ce.d}°</td></tr>`).join("")+"</tbody>";
 document.getElementById("copy").addEventListener("click",async e=>{try{await navigator.clipboard.writeText(csv);e.target.textContent="Copied"}catch(err){e.target.textContent="Copy unavailable here"}setTimeout(()=>e.target.textContent="Copy as CSV",2000)});
 </script>
 

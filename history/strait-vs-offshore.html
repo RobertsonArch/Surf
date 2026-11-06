@@ -43,7 +43,7 @@ td.n{font-family:var(--mono)}
   <header>
     <div class="eyebrow">Angeles Point (46267) vs Neah Bay (46087) · 24 biggest events, 2020–2026</div>
     <h1>How much swell makes it down the Strait</h1>
-    <p class="sub">The 24 biggest swell events at Angeles Point, each set against the outside buoy for the same hours. An event is a run of hours with Angeles Point at 1.2 m or more at 10 s or longer, with breaks of up to 12 hours joined. Neah Bay is used where it has data. It was offline for 11 of these events, so Cape Elizabeth (46041), off the Washington coast, stands in for those.</p>
+    <p class="sub">The 24 biggest swell events at Angeles Point, each set against the outside buoy for the same hours. An event is a run of hours with Angeles Point at 3.9 ft or more at 10 s or longer, with breaks of up to 12 hours joined. Neah Bay is used where it has data. It was offline for 11 of these events, so Cape Elizabeth (46041), off the Washington coast, stands in for those.</p>
   </header>
 
   <section class="panel">
@@ -59,7 +59,7 @@ td.n{font-family:var(--mono)}
   </section>
 
   <section>
-    <div class="eyebrow" style="margin-bottom:8px">Hour by hour, 12 h either side of each event (metres, UTC) · arrows (every 3–9 h, depending on event length) show swell direction, pointing the way it travels, with the period in seconds under each</div>
+    <div class="eyebrow" style="margin-bottom:8px">Hour by hour, 12 h either side of each event (feet, UTC) · arrows (every 3–9 h, depending on event length) show swell direction, pointing the way it travels, with the period in seconds under each</div>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -98,8 +98,9 @@ CE|2021-11-10T07|2021-11-10T12|2021-11-10T10|2.37|11.1|292|2021-11-10T06|6.89|13
 NB|2024-10-02T14|2024-10-04T06|2024-10-02T20|2.27|11.1|292|2024-10-02T17|4.97|12.9|272|2024-10-02T02|0.4 0.6 0.7 0.7 1 1.1 1.1 0.9 0.9 0.6 0.6 0.7 1.2 1.4 1.4 1.5 1.9 2 2.3 1.9 1.4 1 0.8 1 1.1 1.6 1.5 1.5 2 2 2 2.1 1.3 1 0.9 0.9 0.9 1.1 1.1 1.4 1.4 1.6 1.6 1.2 0.8 0.8 0.5 0.6 0.6 0.7 0.8 0.7 1.3 1 1 1.2 1 0.5 0.6 0.5 0.3 0.3 0.3 0.3 0.3|2.6 2.6 2.7 3 2.9 3 3.3 3.4 3.6 3.4 3.6 4.1 4.2 4.5 4.4 5 4.7 4.6 4.2 4.2 4.3 3.7 3.5 3.3 3.7 3.9 3.6 3.9 4.5 3.6 3.7 3.6 3.3 3 3.1 3.2 2.8 2.7 2.7 2.7 2.6 2.5 2.4 2.3 2.1 1.9 2 1.9 1.9 1.8 1.9 1.8 1.8 1.7 1.7 1.5 1.3 1.1 1.1 0.9 1 1.1 1.1 1.3 1.6 `;
 const H=3600e3, MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const pt=s=>Date.parse(s+":00:00Z");
-const ser=s=>s.split(" ").map(v=>v===""?null:+v);
-const E=RAW.trim().split("\n").map(l=>{const f=l.split("|");return{src:f[0],s:pt(f[1]),e:pt(f[2]),at:pt(f[3]),ah:+f[4],ap:+f[5],ad:+f[6],rt:pt(f[7]),rh:+f[8],rp:+f[9],rd:+f[10],k0:pt(f[11]),A:ser(f[12]),R:ser(f[13])}});
+const M2F=v=>+(v*3.28084).toFixed(1);
+const ser=s=>s.split(" ").map(v=>v===""?null:M2F(+v));
+const E=RAW.trim().split("\n").map(l=>{const f=l.split("|");return{src:f[0],s:pt(f[1]),e:pt(f[2]),at:pt(f[3]),ah:M2F(+f[4]),ap:+f[5],ad:+f[6],rt:pt(f[7]),rh:M2F(+f[8]),rp:+f[9],rd:+f[10],k0:pt(f[11]),A:ser(f[12]),R:ser(f[13])}});
 const ref=r=>r.src==="NB"?{name:"Neah Bay",c:"var(--nb)"}:{name:"Cape Elizabeth",c:"var(--ce)"};
 const compass=deg=>["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5)%16];
 const fmt=t=>{const d=new Date(t);return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`};
@@ -110,15 +111,15 @@ const pct=r=>Math.round(r.ah/r.rh*100);
 const arrow=(cx,cy,deg,c,sc=1,tip="")=>`<g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${(deg+180)%360}) scale(${sc})"><path d="M0,-6 L4.5,5 L0,2.2 L-4.5,5 Z" fill="${c}"/>${tip?`<title>${tip}</title>`:""}</g>`;
 
 // summary bars: one row per event, so all 24 fit on any screen (drawn at the real width, redrawn on resize)
-const drawBars=()=>{const svg=document.getElementById("bars"),W=Math.max(300,svg.parentNode.clientWidth),rowH=36,T=22,Hh=T+E.length*rowH+4,LB=74,RC=112,max=10;
+const drawBars=()=>{const svg=document.getElementById("bars"),W=Math.max(300,svg.parentNode.clientWidth),rowH=36,T=22,Hh=T+E.length*rowH+4,LB=74,RC=112,max=35;
  svg.setAttribute("viewBox",`0 0 ${W} ${Hh}`);svg.setAttribute("width",W);svg.setAttribute("height",Hh);
  const x=v=>LB+(W-LB-RC-86)*v/max;let s="";
- const tk=x(2)-x(0)<26?5:2;for(let v=0;v<=max;v+=tk)s+=`<line x1="${x(v)}" x2="${x(v)}" y1="${T-4}" y2="${Hh-2}" stroke="var(--grid)"/><text x="${x(v)}" y="${T-8}" text-anchor="middle">${v}</text>`;
+ const tk=x(5)-x(0)<26?10:5;for(let v=0;v<=max;v+=tk)s+=`<line x1="${x(v)}" x2="${x(v)}" y1="${T-4}" y2="${Hh-2}" stroke="var(--grid)"/><text x="${x(v)}" y="${T-8}" text-anchor="middle">${v}</text>`;
  s+=`<text x="${W-RC+4}" y="${T-8}">share</text><text x="${W-58}" y="${T-8}">dir</text>`;
  E.forEach((r,i)=>{const y0=T+i*rowH+5,bh=12,c=ref(r).c;
   s+=`<text x="0" y="${y0+10}" style="fill:var(--fg)">${i+1}. ${fmt(r.s)}</text><text x="14" y="${y0+23}">${new Date(r.s).getUTCFullYear()}</text>`;
-  s+=`<rect x="${x(0)}" y="${y0}" width="${x(r.ah)-x(0)}" height="${bh}" fill="var(--ap)" rx="2"><title>Angeles Point ${r.ah} m</title></rect><text x="${x(r.ah)+4}" y="${y0+10}" style="stroke:var(--panel);stroke-width:3px;paint-order:stroke;fill:var(--ap)">${r.ah.toFixed(1)} m @ ${Math.round(r.ap)} s</text>`;
-  s+=`<rect x="${x(0)}" y="${y0+bh+1}" width="${x(r.rh)-x(0)}" height="${bh}" fill="${c}" rx="2"><title>${ref(r).name} ${r.rh} m</title></rect><text x="${x(r.rh)+4}" y="${y0+bh+11}" style="stroke:var(--panel);stroke-width:3px;paint-order:stroke;fill:${c}">${r.rh.toFixed(1)} m @ ${Math.round(r.rp)} s</text>`;
+  s+=`<rect x="${x(0)}" y="${y0}" width="${x(r.ah)-x(0)}" height="${bh}" fill="var(--ap)" rx="2"><title>Angeles Point ${r.ah} ft</title></rect><text x="${x(r.ah)+4}" y="${y0+10}" style="stroke:var(--panel);stroke-width:3px;paint-order:stroke;fill:var(--ap)">${r.ah.toFixed(1)} ft @ ${Math.round(r.ap)} s</text>`;
+  s+=`<rect x="${x(0)}" y="${y0+bh+1}" width="${x(r.rh)-x(0)}" height="${bh}" fill="${c}" rx="2"><title>${ref(r).name} ${r.rh} ft</title></rect><text x="${x(r.rh)+4}" y="${y0+bh+11}" style="stroke:var(--panel);stroke-width:3px;paint-order:stroke;fill:${c}">${r.rh.toFixed(1)} ft @ ${Math.round(r.rp)} s</text>`;
   s+=`<text x="${W-RC+4}" y="${y0+10}" style="fill:var(--ap);font-weight:500">${pct(r)}%</text>`; // on the Angeles Point row
   s+=arrow(W-64,y0+6,r.ad,"var(--ap)",.85,`Angeles Point peak from ${r.ad}° ${compass(r.ad)}`)+`<text x="${W-54}" y="${y0+10}" style="fill:var(--ap)">${r.ad}°</text>`;
   s+=arrow(W-64,y0+bh+7,r.rd,c,.85,`${ref(r).name} peak from ${r.rd}° ${compass(r.rd)}`)+`<text x="${W-54}" y="${y0+bh+11}" style="fill:${c}">${r.rd}°</text>`;
@@ -130,10 +131,10 @@ drawBars();let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(
 const grid=document.getElementById("grid");
 // hourly wave direction from the site's buoy archive: {station: {hour: deg}}
 const DIR={};
-const drawGrid=()=>{grid.innerHTML=E.map((r,i)=>{const W=320,Hh=196,L=26,R=6,T=56,B=20,n=Math.max(r.A.length,r.R.length),max=Math.ceil(Math.max(r.rh,r.ah,...r.R.filter(v=>v!=null))+0.5);
+const drawGrid=()=>{grid.innerHTML=E.map((r,i)=>{const W=320,Hh=196,L=26,R=6,T=56,B=20,n=Math.max(r.A.length,r.R.length),max=Math.ceil(Math.max(r.rh,r.ah,...r.R.filter(v=>v!=null))+1.5);
  const x=k=>L+k*(W-L-R)/(n-1), y=v=>T+(Hh-T-B)*(1-v/max);
  const path=a=>{let d="",pen=false;a.forEach((v,k)=>{if(v==null){pen=false;return}d+=(pen?"L":"M")+x(k).toFixed(1)+","+y(v).toFixed(1);pen=true});return d};
- let s="";const step=max>6?2:1;for(let v=0;v<=max;v+=step)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-4}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+ let s="";const step=max>20?5:2;for(let v=0;v<=max;v+=step)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-4}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
  const ks=(r.s-r.k0)/H, ke=(r.e-r.k0)/H;s+=`<rect x="${x(ks)}" y="${T}" width="${Math.max(1,x(ke)-x(ks))}" height="${Hh-T-B}" fill="var(--grid)" opacity=".45"/>`;
  for(let k=0;k<n;k++){const t=r.k0+k*H;if(new Date(t).getUTCHours()===0)s+=`<text x="${x(k)}" y="${Hh-5}" text-anchor="middle">${fmt(t)}</text>`}
  // direction rows along the top, every 3 hours: Angeles Point, then Neah Bay (Cape Elizabeth isn't in the archive)
@@ -150,7 +151,7 @@ const drawGrid=()=>{grid.innerHTML=E.map((r,i)=>{const W=320,Hh=196,L=26,R=6,T=5
  const kp=Math.round((r.at-r.k0)/H);s+=`<circle cx="${x(kp)}" cy="${y(r.ah)}" r="3.5" fill="var(--ap)"/>`;
  return `<article class="card"><h3>${i+1}. ${range(r)}<span class="pill" style="color:${ref(r).c}">${ref(r).name}</span></h3>
   <svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Wave height and direction at Angeles Point and ${ref(r).name}, ${range(r)}">${s}</svg>
-  <div class="meta">Angeles Pt ${r.ah} m @ ${r.ap} s from ${r.ad}° ${compass(r.ad)} · ${ref(r).name} ${r.rh} m @ ${r.rp} s from ${r.rd}° ${compass(r.rd)} · ${pct(r)}%</div></article>`}).join("")};
+  <div class="meta">Angeles Pt ${r.ah} ft @ ${r.ap} s from ${r.ad}° ${compass(r.ad)} · ${ref(r).name} ${r.rh} ft @ ${r.rp} s from ${r.rd}° ${compass(r.rd)} · ${pct(r)}%</div></article>`}).join("")};
 drawGrid();
 (async()=>{const want=new Set();E.forEach(r=>{for(const t of [r.k0,r.e+12*H]){const yv=new Date(t).getUTCFullYear();want.add("46267_"+yv);if(r.src==="NB")want.add("46087_"+yv)}});
  await Promise.all([...want].map(async f=>{try{const j=await (await fetch(`../data/history/${f}.json`)).json();const st=f.slice(0,5);const m=DIR[st]||(DIR[st]={});for(const [h,,pd,d] of j)if(d!=null||pd!=null)m[h]=[d,pd==null?null:pd/10]}catch(e){}}));
@@ -158,7 +159,7 @@ drawGrid();
 
 // table
 document.querySelector("#tbl tbody").innerHTML=E.map((r,i)=>{const lag=Math.round((r.at-r.rt)/H);
- return `<tr><td class="n">${i+1}</td><td>${range(r)}</td><td class="n">${r.ah.toFixed(2)} m</td><td class="n">${r.ap} s · ${r.ad}° ${compass(r.ad)}</td><td><span class="pill" style="color:${ref(r).c}">${ref(r).name}</span></td><td class="n">${r.rh.toFixed(2)} m</td><td class="n">${r.rp} s · ${r.rd}° ${compass(r.rd)}</td><td class="n">${pct(r)}%</td><td class="n">${lag>0?"+":""}${lag} h</td></tr>`}).join("");
+ return `<tr><td class="n">${i+1}</td><td>${range(r)}</td><td class="n">${r.ah.toFixed(1)} ft</td><td class="n">${r.ap} s · ${r.ad}° ${compass(r.ad)}</td><td><span class="pill" style="color:${ref(r).c}">${ref(r).name}</span></td><td class="n">${r.rh.toFixed(1)} ft</td><td class="n">${r.rp} s · ${r.rd}° ${compass(r.rd)}</td><td class="n">${pct(r)}%</td><td class="n">${lag>0?"+":""}${lag} h</td></tr>`}).join("");
 </script>
 
 </body></html>
