@@ -154,7 +154,7 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
     <div class="cc-chart" id="cc-chart"></div>
     <div class="legend">
       <span><i style="background:var(--cc-pred)"></i>NOAA prediction</span>
-      <span><i style="background:var(--cc-meas)"></i>Buoy measured (along the flood/ebb line)</span>
+      <span><i style="background:var(--cc-meas)"></i>Buoy measured (full speed; flood if heading nearer NOAA’s flood direction, ebb if nearer its ebb)</span>
     </div>
     <ul class="windows" id="cc-notes"></ul>
     <p class="src">Check the source: <a href="https://tidesandcurrents.noaa.gov/noaacurrents/predictions.html?id=PUG1639_16" target="_blank" rel="noopener">NOAA current predictions, Angeles Pt. ↗</a> · <a href="https://cdip.ucsd.edu/m/products/?stn=248p1" target="_blank" rel="noopener">CDIP 248 Angeles Point buoy ↗</a></p>
@@ -407,8 +407,8 @@ check();
    const j=await fetchJSON(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?time_zone=gmt&format=json&application=elwha_swell_calculator&station=PUG1639&bin=16&product=currents_predictions&units=english&interval=30&begin_date=${ymd(shift(d,-1))}&end_date=${ymd(shift(e,1))}`);
    for(const x of j.current_predictions?.cp||[]){out.push({t:Date.parse(x.Time.replace(" ","T")+":00Z"),v:+x.Velocity_Major});fd=+x.meanFloodDir;ed=+x.meanEbbDir}}
   return{rows:out.sort((a,b)=>a.t-b.t),fd,ed}}
- // measured speed and heading → signed knots along NOAA's flood (+) / ebb (−) directions
- const signed=(r,fd,ed)=>{const f=r.kt*Math.cos((r.d-fd)*Math.PI/180),e=r.kt*Math.cos((r.d-ed)*Math.PI/180);return f>=e?Math.max(f,0):-Math.max(e,0)};
+ // measured speed, + when heading closer to NOAA's flood direction, − when closer to its ebb direction
+ const signed=(r,fd,ed)=>{const f=Math.cos((r.d-fd)*Math.PI/180),e=Math.cos((r.d-ed)*Math.PI/180);return f>=e?r.kt:-r.kt};
  const at=(rows,t)=>{let lo=0,hi=rows.length-1;if(hi<0||t<rows[0].t||t>rows[hi].t)return null;while(hi-lo>1){const m=(lo+hi)>>1;if(rows[m].t<=t)lo=m;else hi=m}const a=rows[lo],b=rows[hi];return b.t===a.t?a.v:a.v+(b.v-a.v)*(t-a.t)/(b.t-a.t)};
  const corr=(x,y)=>{const n=x.length;if(n<10)return null;const mx=x.reduce((s,v)=>s+v,0)/n,my=y.reduce((s,v)=>s+v,0)/n;let sxy=0,sx=0,sy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sx+=(x[i]-mx)**2;sy+=(y[i]-my)**2}return sxy/Math.sqrt(sx*sy)};
  const fmtD=t=>new Intl.DateTimeFormat("en-CA",{timeZone:TZ,month:"short",day:"numeric"}).format(new Date(t));
@@ -450,7 +450,8 @@ check();
    const pk=a=>a.reduce((s,r)=>Math.max(s,Math.abs(r.v)),0);
    if(both)notes.push(`Same direction (flood or ebb) ${Math.round(agree/both*100)}% of the time when both show a real current.`);
    if(best&&c0!=null)notes.push(best.lag===0?`Timing lines up best with no shift (match ${c0.toFixed(2)} out of 1).`:`The buoy runs about ${Math.abs(best.lag)>=60?(Math.abs(best.lag)/60).toFixed(1)+" h":Math.abs(best.lag)+" min"} ${best.lag>0?"behind":"ahead of"} the prediction (match ${best.c.toFixed(2)} out of 1 when shifted, ${c0.toFixed(2)} as predicted).`);
-   notes.push(`Strongest: NOAA ${pk(P).toFixed(1)} kt, buoy ${pk(M).toFixed(1)} kt along the flood/ebb line, ${Math.max(...M.map(m=>m.kt)).toFixed(1)} kt in any direction.`);
+   const pkd=(a,s)=>a.reduce((m,r)=>Math.max(m,s*r.v),0);
+   notes.push(`Strongest flood: NOAA ${pkd(P,1).toFixed(1)} kt, buoy ${pkd(M,1).toFixed(1)} kt. Strongest ebb: NOAA ${pkd(P,-1).toFixed(1)} kt, buoy ${pkd(M,-1).toFixed(1)} kt.`);
    $("cc-notes").innerHTML=notes.map(n=>`<li>${n}</li>`).join("");
    st.textContent=`${M.length} buoy readings (every 10 min) and ${P.length} NOAA predictions (every 30 min), BC time.`;
   }catch(e){if(my!==seq)return;st.className="status err";st.textContent="Couldn’t load the data ("+(e.name==="AbortError"?"timed out":e.message||e.code||"error")+")."}
