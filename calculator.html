@@ -234,7 +234,8 @@ function render(){
  // on a building flood and less often on a building ebb, mostly on swells under about 3 m. Multipliers on the odds by Neah Bay height:
  const CUR_FB=[[2.25,1.30],[2.75,1.15],[3.5,1.10],[4.5,1.04]], CUR_EB=[[2.25,0.88],[2.75,0.94],[3.5,0.93],[4.5,1.0]];
  const lerp=(tb,x)=>{if(x<=tb[0][0])return tb[0][1];for(let i=1;i<tb.length;i++)if(x<=tb[i][0]){const [a,ya]=tb[i-1],[b,yb]=tb[i];return ya+(yb-ya)*(x-a)/(b-a)}return tb[tb.length-1][1]};
- const curPhase=t=>{const v=lastData.cur.get(t),a=lastData.cur.get(t-H),b=lastData.cur.get(t+H);if(!v||!a||!b)return null;if(Math.abs(v.v)<=30)return "S";return (v.v>0?"F":"E")+(Math.abs(b.v)>Math.abs(a.v)?"b":"e")};
+ // slack is under 20 cm/s (0.4 kt), the same cut the Current row uses; building/easing compares the hour before and after (or one side at the edge of the data)
+ const curPhase=t=>{const v=lastData.cur.get(t);if(!v)return null;if(Math.abs(v.v)<20)return "S";const a=lastData.cur.get(t-H)||v,b=lastData.cur.get(t+H)||v;if(a===b)return null;return (v.v>0?"F":"E")+(Math.abs(b.v)>Math.abs(a.v)?"b":"e")};
  const curAdj=(est,t,nbh)=>{if(!est||!isFinite(nbh))return est;const ph=curPhase(t);const m=ph==="Fb"?lerp(CUR_FB,nbh):ph==="Eb"?lerp(CUR_EB,nbh):1;// size: in the same record Angeles Point averaged about 13% bigger on a building flood and 6% smaller on a building ebb, at every swell size
  const sm=ph==="Fb"?1.13:ph==="Eb"?0.94:1;
  return m===1&&sm===1?{...est,ph}:{...est,p:Math.min(0.99,est.p*m),p0:est.p,ap:est.ap*sm,ap0:est.ap,ph,m}};
