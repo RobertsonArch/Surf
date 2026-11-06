@@ -28,6 +28,14 @@
   .sg-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
   .sg-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
   .sg-card > .sg-note { margin-bottom: var(--cds-gap-md); }
+  .tf-wind { display: grid; gap: 0; }
+  .tf-wind .row { display: grid; grid-template-columns: minmax(7rem, 1.2fr) 1.4fr minmax(5rem, 1fr); gap: var(--cds-gap-sm); align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-border-line); font-variant-numeric: tabular-nums; }
+  .tf-wind .row:last-child { border-bottom: 0; }
+  .tf-wind .nm { font-weight: var(--cds-font-weight-medium); }
+  .tf-wind .nm small { display: block; font-weight: 400; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .tf-wind .spark { min-width: 0; }
+  @media (max-width: 560px) { .tf-wind .row { grid-template-columns: 1fr 1fr; } .tf-wind .spark { grid-column: 1 / -1; } }
+  .tf-wind .spk-cap { display: block; font-size: 10px; color: var(--color-fg-muted); }
 
   .sg-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--cds-gap-lg); align-items: stretch; }
   .sg-hero-main { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
@@ -131,6 +139,13 @@
     <p class="sg-note">Tide in feet. Wind (km/h) is the hourly forecast from Open-Meteo, with arrows showing which way it blows. Shaded columns are daylight.</p>
     <div class="sg-timeline" data-draw="timeline" data-source="tofino tides sun">—</div>
     <p class="src">Check the source: <a href="https://www.tides.gc.ca/en/stations/08615" target="_blank" rel="noopener">DFO tides, Tofino ↗</a> · <a href="https://open-meteo.com/en/docs?latitude=49.12&longitude=-125.9&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=America%2FVancouver" target="_blank" rel="noopener">Open-Meteo wind ↗</a> · <a href="https://aviationweather.gov/data/metar/?id=CYAZ&hours=12" target="_blank" rel="noopener">Tofino airport wind (METAR) ↗</a></p>
+  </section>
+
+  <section class="sg-card" id="wind-measured">
+    <h2>Measured wind</h2>
+    <p class="sg-note">Latest reading at each station, with the last 8 hours charted (BC time).</p>
+    <div class="tf-wind" data-draw="windObs">—</div>
+    <p class="src">Check the source: <a href="https://aviationweather.gov/data/metar/?id=CYAZ&hours=12" target="_blank" rel="noopener">Long Beach / Tofino airport (METAR) ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46206" target="_blank" rel="noopener">La Perouse Bank ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay ↗</a></p>
   </section>
 
   <section id="buoys">
@@ -522,11 +537,67 @@
     { id: '46206', name: 'La Perouse Bank', obsId: 'buoy', obs: (r) => r.filter((x) => x.buoy === 'La Perouse Bank'), color: dash.colors[0] },
     { id: '46087', name: 'Neah Bay', obsId: 'buoy', obs: (r) => r.filter((x) => x.buoy === 'Neah Bay'), color: dash.colors[2] },
   ], TZ));
+  // Measured wind (last 8 hours at each station)
+  const T_STATIONS = [['Tofino Airport', 'Tofino airport · hourly', 'tofino_obs', 'Long Beach'], ['La Perouse Bank', 'buoy, offshore SW of Ucluelet', 'wind_obs'], ['Neah Bay', 'buoy, west end of the Strait', 'wind_obs']];
+  const HOURS = 8;
+  const windTxt = (r) => (r.wind_kmh === 0 || r.dir_deg == null ? `calm${r.gust_kmh ? `, gusts ${r.gust_kmh}` : ''}` : `${r.wind_dir} ${r.wind_kmh} km/h${r.gust_kmh != null ? `, gusts ${r.gust_kmh}` : ''}`);
+  dash.draw('windObs', (el) => {
+    if (!ok('wind_obs') && !ok('tofino_obs')) return reset(el, 'wind_obs');
+    el.classList.remove('dash-skeleton');
+    el.replaceChildren();
+    const ms = (at) => Date.UTC(+at.slice(0, 4), +at.slice(5, 7) - 1, +at.slice(8, 10), +at.slice(11, 13), +at.slice(14, 16));
+    for (const [name, where, src, label] of T_STATIONS) {
+      const all = rows(src).filter((o) => o.station === name).sort((a, b) => (a.at < b.at ? -1 : 1));
+      const r = all.slice(-1)[0];
+      if (!r) continue;
+      const row = mk('div', null, {}, 'row');
+      const nm = mk('div', label || name, {}, 'nm'); nm.append(mk('small', `${where} · ${fmtClock(atMins(r.at))}`));
+      const val = mk('div');
+      if (r.dir_deg != null && r.wind_kmh > 0) val.append(dirArrow(r.dir_deg), ' ');
+      val.append(windTxt(r));
+      const sp = mk('div', null, {}, 'spark');
+      row.append(nm, val, sp);
+      el.append(row);
+      const t1 = ms(r.at), t0 = t1 - HOURS * 3600e3;
+      const ser = all.map((o) => ({ ...o, t: ms(o.at) })).filter((o) => o.t >= t0);
+      if (ser.length < 2) continue;
+      // small chart: km/h on the left, clock time along the bottom (BC time; `at` is already BC clock time)
+      const W = Math.max(160, Math.round(sp.clientWidth) || 190), H = 84, L = 22, B = 14, A = 20; // A: row of hourly direction arrows along the top // drawn at real pixel size so labels stay readable
+      const svg = d3.select(sp).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `${name} wind, last ${HOURS} hours`).attr('width', W).attr('height', H).style('display', 'block');
+      const x = d3.scaleLinear([t0, t1], [L + 2, W - 4]);
+      const ymax = Math.ceil(Math.max(20, d3.max(ser, (o) => Math.max(o.wind_kmh || 0, o.gust_kmh || 0)) || 0) / 10) * 10;
+      const y = d3.scaleLinear([0, ymax], [H - B, A + 8]);
+      const lab = (tx, ty, t, anchor) => svg.append('text').attr('x', tx).attr('y', ty).attr('text-anchor', anchor).attr('font-size', 10).style('fill', 'var(--color-fg-muted)').style('font-variant-numeric', 'tabular-nums').text(t);
+      const yt = ymax <= 20 ? [0, 10, 20] : ymax <= 40 ? [0, 20, ymax] : [0, ymax / 2, ymax];
+      yt.forEach((v) => { svg.append('line').attr('x1', L).attr('x2', W - 2).attr('y1', y(v)).attr('y2', y(v)).attr('stroke', 'var(--cds-chart-grid)'); lab(L - 3, y(v) + 3, v, 'end'); });
+      svg.append('line').attr('x1', L).attr('x2', W - 2).attr('y1', y(10)).attr('y2', y(10)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '2 2');
+      const hr = (t) => { const h = new Date(t).getUTCHours(); return `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`; };
+      for (let t = Math.ceil(t0 / 7200e3) * 7200e3; t <= t1; t += 7200e3) {
+        svg.append('line').attr('x1', x(t)).attr('x2', x(t)).attr('y1', H - B).attr('y2', H - B + 2).attr('stroke', 'var(--color-fg-muted)');
+        lab(Math.min(W - 10, Math.max(L + 8, x(t))), H - 2, hr(t), 'middle');
+      }
+      // hourly direction: the reading nearest each hour (within 30 min); arrow points where the wind is blowing to
+      for (let t = Math.ceil(t0 / 3600e3) * 3600e3; t <= t1; t += 3600e3) {
+        let best = null; for (const o of ser) if (Math.abs(o.t - t) <= 1800e3 && (!best || Math.abs(o.t - t) < Math.abs(best.t - t))) best = o;
+        if (!best) continue;
+        const ax = Math.min(W - 7, Math.max(L + 7, x(t)));
+        const g = svg.append('g').attr('transform', `translate(${ax},${A / 2})`);
+        g.append('title').text(`${hr(t)}: ${windTxt(best)}`);
+        if (best.dir_deg == null || !best.wind_kmh) { g.append('circle').attr('r', 2).style('fill', 'var(--color-fg-muted)'); continue; }
+        g.append('path').attr('d', 'M0,-7 L5,5 L0,2 L-5,5 Z').attr('transform', `rotate(${(best.dir_deg + 180) % 360})`).style('fill', 'var(--color-fg)');
+      }
+      svg.append('path').datum(ser).attr('d', d3.line((o) => x(o.t), (o) => y(o.wind_kmh))).attr('fill', 'none').style('stroke', dash.colors[3]).attr('stroke-width', 1.5);
+      sp.append(mk('small', 'km/h · arrows show hourly direction (pointing downwind)', {}, 'spk-cap'));
+    }
+  });
+
+
   dash.load({
     wave_forecast: 'data/wave_forecast.json',
     tofino: 'data/tofino_wind.json', tides: 'data/tofino_tides.json', sun: 'data/tofino_sun.json',
     buoy: 'data/buoys.json', swells: 'data/swells.json',
-  }, ['buoys', 'swells', 'wave_forecast'], { tofino: live.tofinoWind, tides: live.tofinoTides, sun: live.tofinoSun });
+    wind_obs: 'data/wind_obs.json', tofino_obs: 'data/tofino_obs.json',
+  }, ['buoys', 'swells', 'wave_forecast', 'wind_obs', 'tofino_obs'], { tofino: live.tofinoWind, tides: live.tofinoTides, sun: live.tofinoSun });
 })();
 </script>
 <p class="site-updated" id="updated"></p>
