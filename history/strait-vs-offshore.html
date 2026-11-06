@@ -53,7 +53,6 @@ td.n{font-family:var(--mono)}
       <span><i style="background:var(--ap)"></i>Angeles Point</span>
       <span><i style="background:var(--nb)"></i>Neah Bay</span>
       <span><i style="background:var(--ce)"></i>Cape Elizabeth (stand-in)</span>
-      <span>s: peak period in seconds</span>
       <span>Share: Angeles Point peak as a percent of the outside peak</span>
       <span>Dir: swell direction at each buoy's peak, top row Angeles Point, bottom row the outside buoy. Arrows point the way the swell travels; degrees are where it comes from</span>
     </div>
@@ -111,16 +110,16 @@ const pct=r=>Math.round(r.ah/r.rh*100);
 const arrow=(cx,cy,deg,c,sc=1,tip="")=>`<g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${(deg+180)%360}) scale(${sc})"><path d="M0,-6 L4.5,5 L0,2.2 L-4.5,5 Z" fill="${c}"/>${tip?`<title>${tip}</title>`:""}</g>`;
 
 // summary bars: one row per event, so all 24 fit on any screen (drawn at the real width, redrawn on resize)
-const drawBars=()=>{const svg=document.getElementById("bars"),W=Math.max(300,svg.parentNode.clientWidth),rowH=36,T=22,Hh=T+E.length*rowH+4,LB=74,RC=152,max=10;
+const drawBars=()=>{const svg=document.getElementById("bars"),W=Math.max(300,svg.parentNode.clientWidth),rowH=36,T=22,Hh=T+E.length*rowH+4,LB=74,RC=112,max=10;
  svg.setAttribute("viewBox",`0 0 ${W} ${Hh}`);svg.setAttribute("width",W);svg.setAttribute("height",Hh);
- const x=v=>LB+(W-LB-RC-30)*v/max;let s="";
+ const x=v=>LB+(W-LB-RC-86)*v/max;let s="";
  const tk=x(2)-x(0)<26?5:2;for(let v=0;v<=max;v+=tk)s+=`<line x1="${x(v)}" x2="${x(v)}" y1="${T-4}" y2="${Hh-2}" stroke="var(--grid)"/><text x="${x(v)}" y="${T-8}" text-anchor="middle">${v}</text>`;
- s+=`<text x="${W-RC+4}" y="${T-8}">s</text><text x="${W-RC+42}" y="${T-8}">share</text><text x="${W-58}" y="${T-8}">dir</text>`;
+ s+=`<text x="${W-RC+4}" y="${T-8}">share</text><text x="${W-58}" y="${T-8}">dir</text>`;
  E.forEach((r,i)=>{const y0=T+i*rowH+5,bh=12,c=ref(r).c;
   s+=`<text x="0" y="${y0+10}" style="fill:var(--fg)">${i+1}. ${fmt(r.s)}</text><text x="14" y="${y0+23}">${new Date(r.s).getUTCFullYear()}</text>`;
-  s+=`<rect x="${x(0)}" y="${y0}" width="${x(r.ah)-x(0)}" height="${bh}" fill="var(--ap)" rx="2"><title>Angeles Point ${r.ah} m</title></rect><text x="${x(r.ah)+4}" y="${y0+10}" style="fill:var(--ap)">${r.ah.toFixed(1)}</text><text x="${W-RC+4}" y="${y0+10}" style="fill:var(--ap)">${(+r.ap).toFixed(1)}</text>`;
-  s+=`<rect x="${x(0)}" y="${y0+bh+1}" width="${x(r.rh)-x(0)}" height="${bh}" fill="${c}" rx="2"><title>${ref(r).name} ${r.rh} m</title></rect><text x="${x(r.rh)+4}" y="${y0+bh+11}" style="fill:${c}">${r.rh.toFixed(1)}</text><text x="${W-RC+4}" y="${y0+bh+11}" style="fill:${c}">${(+r.rp).toFixed(1)}</text>`;
-  s+=`<text x="${W-RC+42}" y="${y0+10}" style="fill:var(--ap);font-weight:500">${pct(r)}%</text>`; // on the Angeles Point row
+  s+=`<rect x="${x(0)}" y="${y0}" width="${x(r.ah)-x(0)}" height="${bh}" fill="var(--ap)" rx="2"><title>Angeles Point ${r.ah} m</title></rect><text x="${x(r.ah)+4}" y="${y0+10}" style="stroke:var(--panel);stroke-width:3px;paint-order:stroke;fill:var(--ap)">${r.ah.toFixed(1)} m @ ${Math.round(r.ap)} s</text>`;
+  s+=`<rect x="${x(0)}" y="${y0+bh+1}" width="${x(r.rh)-x(0)}" height="${bh}" fill="${c}" rx="2"><title>${ref(r).name} ${r.rh} m</title></rect><text x="${x(r.rh)+4}" y="${y0+bh+11}" style="stroke:var(--panel);stroke-width:3px;paint-order:stroke;fill:${c}">${r.rh.toFixed(1)} m @ ${Math.round(r.rp)} s</text>`;
+  s+=`<text x="${W-RC+4}" y="${y0+10}" style="fill:var(--ap);font-weight:500">${pct(r)}%</text>`; // on the Angeles Point row
   s+=arrow(W-64,y0+6,r.ad,"var(--ap)",.85,`Angeles Point peak from ${r.ad}° ${compass(r.ad)}`)+`<text x="${W-54}" y="${y0+10}" style="fill:var(--ap)">${r.ad}°</text>`;
   s+=arrow(W-64,y0+bh+7,r.rd,c,.85,`${ref(r).name} peak from ${r.rd}° ${compass(r.rd)}`)+`<text x="${W-54}" y="${y0+bh+11}" style="fill:${c}">${r.rd}°</text>`;
  });
