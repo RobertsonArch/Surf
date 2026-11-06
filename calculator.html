@@ -66,6 +66,8 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 .src{font-size:.8rem;color:var(--muted);margin:0}.src a{color:inherit}
 .foot{font-size:.8rem;color:var(--muted);max-width:80ch;margin:0}
+.cc-chart{min-height:220px}.cc-tip{font-family:var(--mono);font-size:.8rem;color:var(--muted);min-height:1.3em;margin-top:4px}
+:root{--cc-pred:#c47a22;--cc-meas:#0b4f6c}@media (prefers-color-scheme: dark){:root{--cc-meas:#7cc8e4}}
 .fc-tabs{display:flex;gap:6px;flex-wrap:wrap}.fc-tabs button{font:inherit;font-size:.8rem;padding:5px 12px;border-radius:999px;border:1px solid var(--grid);background:var(--panel);color:var(--muted);cursor:pointer}.fc-tabs button[aria-pressed=true]{color:var(--fg);border-color:var(--fg)}
 </style>
 </head>
@@ -129,6 +131,33 @@ td.now{outline:2px solid var(--fg);outline-offset:-2px}
       <div class="big"><b id="t-dur">–</b><span>Travel time</span></div>
       <div><p class="verdict" id="t-verdict"></p><ul class="windows" id="t-notes"></ul></div>
     </div>
+  </section>
+
+  <section class="panel" id="curcmp" aria-live="polite">
+    <div>
+      <p class="eyebrow" style="margin:0">Tidal current</p>
+      <h2 style="margin:2px 0 0;font-size:1.2rem">NOAA prediction vs the Angeles Point buoy</h2>
+      <p class="sub" style="margin-top:4px">NOAA’s predicted current for Angeles Pt., 2 mi NNE, near the surface, against the current measured by the Angeles Point buoy’s current meter, 0.75 m deep. Flood (running east) is above the line, ebb below, in knots.</p>
+    </div>
+    <div class="fc-tabs" id="cc-quick" role="group" aria-label="Quick ranges">
+      <button type="button" data-d="1" aria-pressed="false">Last 24 h</button>
+      <button type="button" data-d="3" aria-pressed="true">Last 3 days</button>
+      <button type="button" data-d="7" aria-pressed="false">Last 7 days</button>
+      <button type="button" data-d="30" aria-pressed="false">Last 30 days</button>
+    </div>
+    <div class="inputs">
+      <label for="cc-from">From<input id="cc-from" type="date"></label>
+      <label for="cc-to">To<input id="cc-to" type="date"></label>
+      <button class="go" id="cc-go" type="button">Compare</button>
+    </div>
+    <div class="status" id="cc-status" role="status"></div>
+    <div class="cc-chart" id="cc-chart"></div>
+    <div class="legend">
+      <span><i style="background:var(--cc-pred)"></i>NOAA prediction</span>
+      <span><i style="background:var(--cc-meas)"></i>Buoy measured (along the flood/ebb line)</span>
+    </div>
+    <ul class="windows" id="cc-notes"></ul>
+    <p class="src">Check the source: <a href="https://tidesandcurrents.noaa.gov/noaacurrents/predictions.html?id=PUG1639_16" target="_blank" rel="noopener">NOAA current predictions, Angeles Pt. ↗</a> · <a href="https://cdip.ucsd.edu/m/products/?stn=248p1" target="_blank" rel="noopener">CDIP 248 Angeles Point buoy ↗</a></p>
   </section>
 
   <p class="src">Check the source: <a href="https://www.ndbc.noaa.gov/station_page.php?station=46087" target="_blank" rel="noopener">Neah Bay buoy ↗</a> · <a href="https://www.ndbc.noaa.gov/station_page.php?station=46267" target="_blank" rel="noopener">Angeles Point buoy ↗</a> · <a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=9444090" target="_blank" rel="noopener">NOAA tides, Port Angeles ↗</a> · <a href="https://tidesandcurrents.noaa.gov/noaacurrents/predictions.html?id=PUG1639_16" target="_blank" rel="noopener">NOAA current, Angeles Pt. ↗</a> · <a href="https://forecast.weather.gov/MapClick.php?lat=48.146&lon=-123.565" target="_blank" rel="noopener">NWS forecast ↗</a> · <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=9444090" target="_blank" rel="noopener">Port Angeles harbor wind (NOAA) ↗</a> · <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46087" target="_blank" rel="noopener">Stormsurf, Neah Bay forecast ↗</a></p>
@@ -356,6 +385,81 @@ check();
   btn.disabled=false;calc()});
  $("t-at").value=toLocalInput(Date.now());
  calc();
+})();
+// ---- current: NOAA prediction vs buoy ----
+(()=>{
+ const CDIP="https://thredds.cdip.ucsd.edu/thredds/dodsC/cdip/";
+ const FILES=[{f:"realtime/248p1_rt.nc"},{f:"archive/248p1/248p1_historic.nc"}];
+ const MAXD=31;
+ const txt=async u=>{const r=await fetch(u,{cache:"no-cache"});if(!r.ok)throw new Error("HTTP "+r.status);return r.text()};
+ const dap=t=>{const i=t.indexOf("-----"),o={};if(i<0)return o;for(const b of t.slice(i).split(/\n\s*\n/)){const L=b.split("\n").map(l=>l.trim()).filter(l=>l&&!/^-+$/.test(l));if(L.length>1)o[L[0].split("[")[0]]=L.slice(1).join(",").split(",").filter(v=>v.trim()).map(Number)}return o};
+ // coarse daily index of each file, cached: lets us pull only the slice we need
+ const idx=f=>f.p||(f.p=(async()=>{const n=+((await txt(CDIP+f.f+".dds")).match(/acmTime\[acmTime = (\d+)\]/)||[])[1];if(!n)throw new Error("no current data");const co=dap(await txt(`${CDIP}${f.f}.ascii?acmTime[0:144:${n-1}]`)).acmTime||[];return{n,co}})().catch(e=>{f.p=null;throw e}));
+ async function measured(t0,t1){const out=[];
+  for(const f of FILES){let I;try{I=await idx(f)}catch(e){continue}
+   const {n,co}=I;if(!co.length||co[co.length-1]*1e3<t0-864e5&&f!==FILES[0]||co[0]*1e3>t1)continue;
+   let a=0,b=n-1;for(let k=0;k<co.length;k++){if(co[k]*1e3<=t0)a=k*144;if(co[k]*1e3>=t1){b=Math.min(n-1,(k+1)*144);break}}
+   const q=`[${a}:1:${b}]`;const D=dap(await txt(`${CDIP}${f.f}.ascii?acmTime${q},acmSpeed${q},acmDirection${q},acmFlagPrimary${q}`));
+   (D.acmTime||[]).forEach((s,i)=>{const t=s*1e3,sp=D.acmSpeed[i],di=D.acmDirection[i];if(t<t0||t>t1||D.acmFlagPrimary[i]!==1||!(sp>=0)||!(di>=0))return;out.push({t,kt:sp*1.94384,d:di})})}
+  const m=new Map();for(const r of out)m.set(r.t,r);return [...m.values()].sort((a,b)=>a.t-b.t)}
+ async function predicted(from,to){const out=[];let fd=75,ed=300;
+  for(let d=from;d<=to;d=shift(d,31)){const e=shift(d,30)<to?shift(d,30):to;
+   const j=await fetchJSON(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?time_zone=gmt&format=json&application=elwha_swell_calculator&station=PUG1639&bin=16&product=currents_predictions&units=english&interval=30&begin_date=${ymd(shift(d,-1))}&end_date=${ymd(shift(e,1))}`);
+   for(const x of j.current_predictions?.cp||[]){out.push({t:Date.parse(x.Time.replace(" ","T")+":00Z"),v:+x.Velocity_Major});fd=+x.meanFloodDir;ed=+x.meanEbbDir}}
+  return{rows:out.sort((a,b)=>a.t-b.t),fd,ed}}
+ // measured speed and heading → signed knots along NOAA's flood (+) / ebb (−) directions
+ const signed=(r,fd,ed)=>{const f=r.kt*Math.cos((r.d-fd)*Math.PI/180),e=r.kt*Math.cos((r.d-ed)*Math.PI/180);return f>=e?Math.max(f,0):-Math.max(e,0)};
+ const at=(rows,t)=>{let lo=0,hi=rows.length-1;if(hi<0||t<rows[0].t||t>rows[hi].t)return null;while(hi-lo>1){const m=(lo+hi)>>1;if(rows[m].t<=t)lo=m;else hi=m}const a=rows[lo],b=rows[hi];return b.t===a.t?a.v:a.v+(b.v-a.v)*(t-a.t)/(b.t-a.t)};
+ const corr=(x,y)=>{const n=x.length;if(n<10)return null;const mx=x.reduce((s,v)=>s+v,0)/n,my=y.reduce((s,v)=>s+v,0)/n;let sxy=0,sx=0,sy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sx+=(x[i]-mx)**2;sy+=(y[i]-my)**2}return sxy/Math.sqrt(sx*sy)};
+ const fmtD=t=>new Intl.DateTimeFormat("en-CA",{timeZone:TZ,month:"short",day:"numeric"}).format(new Date(t));
+ const fmtDT=t=>new Intl.DateTimeFormat("en-CA",{timeZone:TZ,month:"short",day:"numeric",hour:"numeric",minute:"2-digit",hourCycle:"h23"}).format(new Date(t));
+ const midnight=d=>{const t=Date.parse(d+"T08:00:00Z");return t-localHour(t)*3600e3};
+ let last=null;
+ function draw(){const el=$("cc-chart");if(!last){el.innerHTML="";return}
+  const {P,M,t0,t1}=last,W=Math.max(320,el.clientWidth||700),Hh=Math.round(Math.min(320,Math.max(220,W*0.42))),L=34,R=8,T=10,B=24;
+  const all=[...P.map(p=>p.v),...M.map(m=>m.v)];const ym=Math.max(1,Math.ceil(Math.max(...all.map(Math.abs))*2)/2);
+  const x=t=>L+(t-t0)/(t1-t0)*(W-L-R),y=v=>T+(Hh-T-B)*(ym-v)/(2*ym);
+  let s="";const step=ym>3?1:0.5;for(let v=-Math.floor(ym/step)*step;v<=ym+1e-9;v+=step)s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"${Math.abs(v)<1e-9?' stroke-width="1.5" stroke="var(--muted)"':""}/><text x="${L-5}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${v>0?"+":""}${v}</text>`;
+  const days=(t1-t0)/864e5,every=days>14?7:days>6?2:1;
+  for(let d=$("cc-from").value,i=0;d<=shift($("cc-to").value,1);d=shift(d,1),i++){const t=midnight(d);if(t<t0||t>t1)continue;s+=`<line x1="${x(t)}" x2="${x(t)}" y1="${T}" y2="${Hh-B}" stroke="var(--grid)"/>`;if(i%every===0&&t<t1-3600e3)s+=`<text x="${x(t)+3}" y="${Hh-8}" font-size="10" fill="var(--muted)">${fmtD(t)}</text>`}
+  const path=(rows,gap)=>{let d="",prev=null;for(const r of rows){d+=(prev&&r.t-prev.t<=gap?"L":"M")+x(r.t).toFixed(1)+","+y(r.v).toFixed(1);prev=r}return d};
+  s+=`<path d="${path(P,3*3600e3)}" fill="none" stroke="var(--cc-pred)" stroke-width="2"/>`;
+  s+=`<path d="${path(M,40*60e3)}" fill="none" stroke="var(--cc-meas)" stroke-width="1.6"/>`;
+  s+=`<text x="${L+4}" y="${T+11}" font-size="10" fill="var(--muted)">flood ↑</text><text x="${L+4}" y="${Hh-B-5}" font-size="10" fill="var(--muted)">ebb ↓</text>`;
+  s+=`<line id="cc-cur" x1="0" x2="0" y1="${T}" y2="${Hh-B}" stroke="var(--fg)" stroke-width="1" visibility="hidden"/><rect id="cc-hit" x="${L}" y="${T}" width="${W-L-R}" height="${Hh-T-B}" fill="transparent"/>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="Predicted and measured current at Angeles Point">${s}</svg><div class="cc-tip" id="cc-tip">Tap or hover the chart for readings.</div>`;
+  const svg=el.querySelector("svg"),cur=el.querySelector("#cc-cur"),tip=el.querySelector("#cc-tip");
+  const move=ev=>{const r=svg.getBoundingClientRect(),px=(ev.clientX-r.left)/r.width*W;const t=t0+(px-L)/(W-L-R)*(t1-t0);cur.setAttribute("x1",px);cur.setAttribute("x2",px);cur.setAttribute("visibility","visible");
+   const p=at(P,t);let m=null;for(const q of M){if(Math.abs(q.t-t)<=10*60e3&&(!m||Math.abs(q.t-t)<Math.abs(m.t-t)))m=q}
+   const ph=v=>v==null?"?":Math.abs(v)<0.2?"slack":(v>0?"flood ":"ebb ")+Math.abs(v).toFixed(1)+" kt";
+   tip.textContent=`${fmtDT(t)} · NOAA ${ph(p)} · buoy ${m?`${m.kt.toFixed(1)} kt toward ${cmp((m.d+0)%360)} ${Math.round(m.d)}° (${ph(m.v)})`:"no reading"}`};
+  el.querySelector("#cc-hit").addEventListener("pointermove",move);el.querySelector("#cc-hit").addEventListener("pointerdown",move)}
+ async function run(){let from=$("cc-from").value,to=$("cc-to").value;const st=$("cc-status");if(!from||!to)return;if(to<from)[from,to]=[to,from];
+  if((Date.parse(to)-Date.parse(from))/864e5+1>MAXD){from=shift(to,-(MAXD-1));$("cc-from").value=from}
+  const t0=midnight(from),t1=Math.min(midnight(shift(to,1)),Date.now()+2*3600e3);
+  const btn=$("cc-go");btn.disabled=true;st.className="status";st.textContent=`Loading NOAA predictions and buoy readings for ${from}${to!==from?" to "+to:""}…`;
+  try{const [pr,ms]=await Promise.all([predicted(from,to),measured(t0-3600e3,t1+3600e3)]);
+   const P=pr.rows.filter(r=>r.t>=t0&&r.t<=t1),M=ms.map(r=>({...r,v:signed(r,pr.fd,pr.ed)})).filter(r=>r.t>=t0&&r.t<=t1);
+   last={P,M,t0,t1};draw();
+   const notes=[];
+   if(!M.length){st.className="status err";st.textContent="No buoy current readings for those dates. The buoy record runs from April 2020, with a gap from early February to late April 2026.";$("cc-notes").innerHTML="";return}
+   // timing: shift the prediction until it lines up best with the buoy
+   let best=null;for(let lag=-180;lag<=180;lag+=10){const xs=[],ys=[];for(const m of M){const p=at(pr.rows,m.t-lag*60e3);if(p!=null){xs.push(p);ys.push(m.v)}}const c=corr(xs,ys);if(c!=null&&(!best||c>best.c))best={lag,c}}
+   const xs0=[],ys0=[];for(const m of M){const p=at(pr.rows,m.t);if(p!=null){xs0.push(p);ys0.push(m.v)}}const c0=corr(xs0,ys0);
+   const agree=M.filter(m=>{const p=at(pr.rows,m.t);return p!=null&&Math.abs(p)>=0.4&&Math.abs(m.v)>=0.2&&Math.sign(p)===Math.sign(m.v)}).length,both=M.filter(m=>{const p=at(pr.rows,m.t);return p!=null&&Math.abs(p)>=0.4&&Math.abs(m.v)>=0.2}).length;
+   const pk=a=>a.reduce((s,r)=>Math.max(s,Math.abs(r.v)),0);
+   if(both)notes.push(`Same direction (flood or ebb) ${Math.round(agree/both*100)}% of the time when both show a real current.`);
+   if(best&&c0!=null)notes.push(best.lag===0?`Timing lines up best with no shift (match ${c0.toFixed(2)} out of 1).`:`The buoy runs about ${Math.abs(best.lag)>=60?(Math.abs(best.lag)/60).toFixed(1)+" h":Math.abs(best.lag)+" min"} ${best.lag>0?"behind":"ahead of"} the prediction (match ${best.c.toFixed(2)} out of 1 when shifted, ${c0.toFixed(2)} as predicted).`);
+   notes.push(`Strongest: NOAA ${pk(P).toFixed(1)} kt, buoy ${pk(M).toFixed(1)} kt along the flood/ebb line, ${Math.max(...M.map(m=>m.kt)).toFixed(1)} kt in any direction.`);
+   $("cc-notes").innerHTML=notes.map(n=>`<li>${n}</li>`).join("");
+   st.textContent=`${M.length} buoy readings (every 10 min) and ${P.length} NOAA predictions (every 30 min), BC time.`;
+  }catch(e){st.className="status err";st.textContent="Couldn’t load the data ("+(e.message||e.code||"error")+")."}
+  btn.disabled=false}
+ const setRange=d=>{const to=localDate(Date.now());$("cc-to").value=to;$("cc-from").value=shift(to,-(d-1));document.querySelectorAll("#cc-quick button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.d===d)));run()};
+ document.querySelectorAll("#cc-quick button").forEach(b=>b.addEventListener("click",()=>setRange(+b.dataset.d)));
+ $("cc-go").addEventListener("click",()=>{document.querySelectorAll("#cc-quick button").forEach(b=>b.setAttribute("aria-pressed","false"));run()});
+ let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(draw,150)});
+ setRange(3);
 })();
 </script>
 </body>
