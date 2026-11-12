@@ -73,7 +73,7 @@
     <span><i style="background:color-mix(in srgb,#e39a2d 13%,transparent);border-color:#e39a2d"></i>Weak: short or light flood</span>
     <span><i style="border-color:var(--color-border-line)"></i>No window</span>
   </div>
-  <p class="note">Mini charts run 5 AM–9 PM: blue tide line where it’s 0–6 ft, orange fill is the flood current, green bar is the window. “E wind” means the forecast has east wind of 10+ km/h during that day’s window. Tap a day for details.</p>
+  <p class="note">Mini charts run 5 AM–9 PM: blue tide line where it’s 0–6 ft, orange fill is the flood current, green bar is the window. “E wind” means the forecast has east wind of 10+ km/h during that day’s window (or during daylight on days with no window). Swell and wind show on every day the forecast reaches. Tap a day for details.</p>
   <section class="detail" id="detail" aria-live="polite"></section>
   <p class="src">Check the source: <a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=9444090" target="_blank" rel="noopener">NOAA tides, Port Angeles ↗</a> · <a href="https://tidesandcurrents.noaa.gov/noaacurrents/predictions.html?id=PUG1639_16" target="_blank" rel="noopener">NOAA current, Angeles Pt. ↗</a> · <a href="https://forecast.weather.gov/MapClick.php?lat=48.146&lon=-123.565" target="_blank" rel="noopener">NWS forecast ↗</a> · <a href="https://stormsurf.com/cgi-bin/4cast.cgi?ID=gfswave.46087" target="_blank" rel="noopener">Stormsurf, Neah Bay forecast ↗</a></p>
   <div class="grid-wrap"><div class="grid" id="grid"></div></div>
@@ -165,10 +165,12 @@
     const cls = ['none', 'weak', 'good', 'prime'][wins.length ? wins[0].g : 0];
     const turns = T.filter((p) => p.r.day === ds);
     const curs = C.filter((p) => p.r.day === ds && p.r.type !== 'Slack');
-    // wind during the main window, when the forecast covers it
+    // Forecast span: the main window, or daylight when there is no window
+    const span = wins.length ? wins[0] : { start: Math.round(sun.rise), end: Math.round(sun.set), daylight: true };
+    // wind during that span, when the forecast covers it
     let wx = null;
-    if (wins.length) {
-      const w = wins[0];
+    {
+      const w = span;
       const hrs = rows('wind').filter((r) => r.day === ds && r.hour * 60 + 59 >= w.start && r.hour * 60 <= w.end);
       if (hrs.length) {
         const east = hrs.filter((r) => r.dir_deg >= 45 && r.dir_deg <= 135 && r.wind_kmh >= 10);
@@ -178,13 +180,13 @@
     // Neah Bay forecast swell arriving during the main window (about 3 h travel)
     let sw = null;
     const fc = ok('wave_forecast') ? (dash.data('wave_forecast').data.stations || {})['46087'] || [] : [];
-    if (wins.length && fc.length) {
-      const w = wins[0];
+    if (fc.length) {
+      const w = span;
       const toLocalMin = (iso) => { const t = Date.parse(iso) + 3 * 3600e3; const p = new Date(t).toLocaleString('en-CA', { timeZone: TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ''); return { day: p.slice(0, 10), m: +p.slice(11, 13) * 60 + +p.slice(14, 16) }; };
       const hits = fc.filter((r) => { const q = toLocalMin(r.utc); return q.day === ds && q.m >= w.start - 90 && q.m <= w.end + 30; });
       if (hits.length) { const pk = hits.reduce((a, b) => (b.hs_ft > a.hs_ft ? b : a)); sw = { ft: pk.hs_ft, tr: pk.trains[0] }; }
     }
-    return { ds, sun, samples, wins, cls, turns, curs, wx, sw };
+    return { ds, sun, samples, wins, cls, turns, curs, wx, sw, span };
   };
 
   const mini = (a, big) => {
@@ -237,8 +239,9 @@
     cards.append(card('Max current', a.curs.map((p) => `${p.r.type} ${p.r.speed_kt} kt ${p.r.time}`).join(' · ') || '—'));
     cards.append(card('Daylight', `${clock(a.sun.rise)} – ${clock(a.sun.set)}`));
     cards.append(card('Moon', `${mn.icon} ${mn.name} (~${mn.illum}%)`));
-    if (a.sw) cards.append(card('Neah Bay forecast for the window', `${a.sw.ft} ft total${a.sw.tr ? `, largest train ${a.sw.tr.height_ft} ft @ ${a.sw.tr.period_s} s ${a.sw.tr.direction}` : ''}`));
-    if (a.wx) cards.append(card('Forecast wind in window', a.wx.east ? `East 10+ km/h (max ${a.wx.max})` : `OK, max ${a.wx.max} km/h`));
+    const inSpan = a.span.daylight ? 'in daylight' : 'for the window';
+    if (a.sw) cards.append(card(`Neah Bay forecast ${inSpan}`, `${a.sw.ft} ft total${a.sw.tr ? `, largest train ${a.sw.tr.height_ft} ft @ ${a.sw.tr.period_s} s ${a.sw.tr.direction}` : ''}`));
+    if (a.wx) cards.append(card(`Forecast wind ${a.span.daylight ? 'in daylight' : 'in window'}`, a.wx.east ? `East 10+ km/h (max ${a.wx.max})` : `OK, max ${a.wx.max} km/h`));
     const lk = document.createElement('a'); lk.className = 'calc-link'; lk.href = `calculator.html?date=${a.ds}${a.wins.length ? `&time=${String(Math.floor(a.wins[0].start / 60)).padStart(2, '0')}:${String(a.wins[0].start % 60).padStart(2, '0')}` : ''}`; lk.textContent = 'Open in the swell calculator →';
     const lp = document.createElement('p'); lp.style.margin = '10px 0 0'; lp.append(lk);
     el.replaceChildren(head, big, cards, lp);
